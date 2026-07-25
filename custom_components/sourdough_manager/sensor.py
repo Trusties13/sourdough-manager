@@ -8,7 +8,6 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, Sen
 from homeassistant.const import PERCENTAGE, UnitOfMass, UnitOfTemperature
 from homeassistant.util import dt as dt_util
 
-from .entity import StarterEntity
 from .const import (
     CONF_PROGRAMME,
     CONF_REMINDER_DAYS,
@@ -17,6 +16,7 @@ from .const import (
     DEFAULT_REMINDER_DAYS,
     DEFAULT_VESSEL_TARE,
 )
+from .entity import StarterEntity
 from .models import (
     cycle_progress,
     cycle_status,
