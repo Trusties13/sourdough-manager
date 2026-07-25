@@ -13,16 +13,16 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    CONF_DEFAULT_TEMPERATURE,
     CONF_DEFAULT_FLOUR,
     CONF_DEFAULT_FLOUR_AMOUNT,
     CONF_DEFAULT_STARTER,
+    CONF_DEFAULT_TEMPERATURE,
     CONF_DEFAULT_WATER,
     CONF_STARTER_HYDRATION,
     CONF_TEMPERATURE_ENTITY,
-    DEFAULT_HYDRATION,
     DEFAULT_FLOUR,
     DEFAULT_FLOUR_AMOUNT,
+    DEFAULT_HYDRATION,
     DEFAULT_STARTER,
     DEFAULT_TEMPERATURE,
     DEFAULT_WATER,
