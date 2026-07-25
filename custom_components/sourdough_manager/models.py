@@ -140,7 +140,7 @@ def peak_times(cycle: dict[str, Any]) -> tuple[datetime, datetime, datetime]:
 
 def programme_day(data: dict[str, Any]) -> int:
     """Return the one-based feeding programme day."""
-    return max(1, (int(data.get("feed_count", 0)) + 1) // 2)
+    return max(1, int(data.get("feed_count", 0)) // 2 + 1)
 
 
 def programme_phase(data: dict[str, Any], programme: str) -> str:
