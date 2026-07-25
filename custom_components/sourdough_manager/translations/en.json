@@ -1,0 +1,56 @@
+{
+  "title": "Sourdough Manager",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a sourdough starter",
+        "description": "Create a device and entities for this starter.",
+        "data": {
+          "name": "Starter name",
+          "starter_hydration": "Starter hydration",
+          "default_flour": "Default flour",
+          "temperature_entity": "Temperature sensor",
+          "default_temperature": "Fallback temperature",
+          "refrigerated_reminder_days": "Refrigerated feed reminder"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Starter options",
+        "data": {
+          "starter_hydration": "Starter hydration",
+          "default_flour": "Default flour",
+          "temperature_entity": "Temperature sensor",
+          "default_temperature": "Fallback temperature",
+          "refrigerated_reminder_days": "Refrigerated feed reminder"
+        }
+      }
+    }
+  },
+  "selector": {
+    "flour": {
+      "options": {
+        "bread_flour": "Bread flour", "plain_flour": "Plain flour",
+        "wholemeal_wheat": "Wholemeal wheat", "rye": "Rye", "spelt": "Spelt",
+        "custom_blend": "Custom blend", "other": "Other"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {"name": "Status"}, "last_fed": {"name": "Last fed"},
+      "expected_peak": {"name": "Expected peak"}, "peak_window_start": {"name": "Peak window start"},
+      "peak_window_end": {"name": "Peak window end"}, "current_weight": {"name": "Current weight"},
+      "feed_ratio": {"name": "Feed ratio"}, "hydration": {"name": "Hydration"},
+      "cycle_progress": {"name": "Cycle progress"}, "prediction_confidence": {"name": "Prediction confidence"},
+      "average_temperature": {"name": "Temperature at feed"}, "last_peak_duration": {"name": "Last peak duration"}
+    },
+    "button": {
+      "mark_peak": {"name": "Mark peak"}, "refrigerate": {"name": "Refrigerate"},
+      "remove_from_fridge": {"name": "Remove from fridge"}, "cancel_cycle": {"name": "Cancel cycle"}
+    }
+  }
+}

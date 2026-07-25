@@ -1,0 +1,10 @@
+{
+  "domain": "sourdough_manager",
+  "name": "Sourdough Manager",
+  "codeowners": ["@Trusties13"],
+  "config_flow": true,
+  "documentation": "https://github.com/Trusties13/sourdough-manager",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "version": "0.1.0"
+}

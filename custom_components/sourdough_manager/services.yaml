@@ -1,0 +1,85 @@
+record_feed:
+  name: Record feed
+  description: Record a complete feed as one atomic action.
+  fields:
+    config_entry_id:
+      name: Starter
+      required: true
+      selector:
+        config_entry:
+          integration: sourdough_manager
+    starter_retained_g:
+      name: Starter retained
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 5000
+          step: 0.1
+          unit_of_measurement: g
+          mode: box
+    water_added_g:
+      name: Water added
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 5000
+          step: 0.1
+          unit_of_measurement: g
+          mode: box
+    flour_added_g:
+      name: Flour added
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 5000
+          step: 0.1
+          unit_of_measurement: g
+          mode: box
+    flour_type:
+      name: Flour type
+      selector:
+        select:
+          options:
+            - bread_flour
+            - plain_flour
+            - wholemeal_wheat
+            - rye
+            - spelt
+            - custom_blend
+            - other
+    fed_at:
+      name: Fed at
+      selector:
+        datetime:
+    notes:
+      name: Notes
+      selector:
+        text:
+          multiline: true
+record_discard:
+  name: Record discard
+  description: Reduce the starter's current weight by a discarded amount.
+  fields: &weight_fields
+    config_entry_id:
+      name: Starter
+      required: true
+      selector:
+        config_entry:
+          integration: sourdough_manager
+    amount_g:
+      name: Amount
+      required: true
+      selector:
+        number:
+          min: 0.1
+          max: 5000
+          step: 0.1
+          unit_of_measurement: g
+          mode: box
+record_use:
+  name: Record use
+  description: Reduce the starter's current weight by an amount used for baking.
+  fields: *weight_fields
