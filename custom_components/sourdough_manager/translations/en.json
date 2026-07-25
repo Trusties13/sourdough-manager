@@ -9,6 +9,11 @@
           "name": "Starter name",
           "starter_hydration": "Starter hydration",
           "default_flour": "Default flour",
+          "default_starter_retained_g": "Default starter retained",
+          "default_water_added_g": "Default water added",
+          "default_flour_added_g": "Default flour added",
+          "vessel_tare_g": "Empty jar weight",
+          "programme": "Starter programme",
           "temperature_entity": "Temperature sensor",
           "default_temperature": "Fallback temperature",
           "refrigerated_reminder_days": "Refrigerated feed reminder"
@@ -23,6 +28,11 @@
         "data": {
           "starter_hydration": "Starter hydration",
           "default_flour": "Default flour",
+          "default_starter_retained_g": "Default starter retained",
+          "default_water_added_g": "Default water added",
+          "default_flour_added_g": "Default flour added",
+          "vessel_tare_g": "Empty jar weight",
+          "programme": "Starter programme",
           "temperature_entity": "Temperature sensor",
           "default_temperature": "Fallback temperature",
           "refrigerated_reminder_days": "Refrigerated feed reminder"
@@ -37,6 +47,13 @@
         "wholemeal_wheat": "Wholemeal wheat", "rye": "Rye", "spelt": "Spelt",
         "custom_blend": "Custom blend", "other": "Other"
       }
+    },
+    "programme": {
+      "options": {
+        "mature": "Mature starter",
+        "new_starter": "New starter programme",
+        "refrigerated": "Refrigerated maintenance"
+      }
     }
   },
   "entity": {
@@ -46,11 +63,35 @@
       "peak_window_end": {"name": "Peak window end"}, "current_weight": {"name": "Current weight"},
       "feed_ratio": {"name": "Feed ratio"}, "hydration": {"name": "Hydration"},
       "cycle_progress": {"name": "Cycle progress"}, "prediction_confidence": {"name": "Prediction confidence"},
-      "average_temperature": {"name": "Temperature at feed"}, "last_peak_duration": {"name": "Last peak duration"}
+      "average_temperature": {"name": "Temperature at feed"}, "last_peak_duration": {"name": "Last peak duration"},
+      "total_weight_with_vessel": {"name": "Total weight with jar"},
+      "suggested_discard": {"name": "Suggested discard"},
+      "suggested_water": {"name": "Suggested water"},
+      "suggested_flour": {"name": "Suggested flour"},
+      "next_feed_due": {"name": "Next feed due"},
+      "feeding_count": {"name": "Total feedings"},
+      "programme_day": {"name": "Programme day"},
+      "programme_phase": {"name": "Programme phase"},
+      "instructions": {"name": "Next feeding instructions"}
     },
     "button": {
-      "mark_peak": {"name": "Mark peak"}, "refrigerate": {"name": "Refrigerate"},
+      "record_feed": {"name": "Record feed"}, "mark_peak": {"name": "Mark peak"}, "refrigerate": {"name": "Refrigerate"},
       "remove_from_fridge": {"name": "Remove from fridge"}, "cancel_cycle": {"name": "Cancel cycle"}
+    },
+    "number": {
+      "starter_retained": {"name": "Starter retained"},
+      "water_added": {"name": "Water added"},
+      "flour_added": {"name": "Flour added"}
+    },
+    "select": {
+      "feed_flour_type": {
+        "name": "Feed flour type",
+        "state": {
+          "bread_flour": "Bread flour", "plain_flour": "Plain flour",
+          "wholemeal_wheat": "Wholemeal wheat", "rye": "Rye", "spelt": "Spelt",
+          "custom_blend": "Custom blend", "other": "Other"
+        }
+      }
     }
   }
 }

@@ -136,3 +136,64 @@ def peak_times(cycle: dict[str, Any]) -> tuple[datetime, datetime, datetime]:
     fed_at = parse_datetime(cycle["fed_at"])
     prediction = cycle["prediction"]
     return tuple(fed_at + timedelta(hours=float(prediction[key])) for key in ("hours", "low_hours", "high_hours"))
+
+
+def programme_day(data: dict[str, Any]) -> int:
+    """Return the one-based feeding programme day."""
+    return max(1, int(data.get("feed_count", 0)) // 2 + 1)
+
+
+def programme_phase(data: dict[str, Any], programme: str) -> str:
+    """Return a plain programme phase."""
+    if programme == "refrigerated":
+        return "refrigerated_maintenance"
+    if programme != "new_starter":
+        return "mature_maintenance"
+    day = programme_day(data)
+    if day <= 2:
+        return "initialisation"
+    if day <= 5:
+        return "establishment"
+    if day <= 7:
+        return "activation"
+    return "maintenance"
+
+
+def next_feed_time(
+    data: dict[str, Any], programme: str, reminder_days: int
+) -> datetime | None:
+    """Calculate the next useful feed time."""
+    cycle = data.get("active_cycle")
+    if not cycle:
+        return None
+    fed_at = parse_datetime(cycle["fed_at"])
+    if fed_at is None:
+        return None
+    if data.get("location") == "refrigerator" or programme == "refrigerated":
+        return fed_at + timedelta(days=reminder_days)
+    if programme == "new_starter":
+        interval = 12 if programme_day(data) >= 6 else 24
+        return fed_at + timedelta(hours=interval)
+    prediction = cycle.get("prediction", {})
+    return fed_at + timedelta(hours=float(prediction.get("high_hours", 12)))
+
+
+def feeding_instruction(
+    data: dict[str, Any],
+    programme: str,
+    starter_g: float,
+    water_g: float,
+    flour_g: float,
+) -> str:
+    """Return a concise, dashboard-ready instruction."""
+    if data.get("location") == "refrigerator":
+        return "Keep refrigerated until the next maintenance feed."
+    day = programme_day(data)
+    if programme == "new_starter" and day <= 2:
+        return f"Day {day}: add {water_g:g} g water and {flour_g:g} g flour; no discard is required."
+    discard = max(0.0, float(data.get("current_weight_g", 0)) - starter_g)
+    return (
+        f"Retain {starter_g:g} g starter"
+        f"{f', discard {discard:g} g' if discard else ''}, then add "
+        f"{water_g:g} g water and {flour_g:g} g flour."
+    )

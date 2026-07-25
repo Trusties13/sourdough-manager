@@ -17,7 +17,7 @@ class StarterStore:
 
     async def load(self) -> dict[str, Any]:
         """Load state."""
-        return await self._store.async_load() or {
+        defaults = {
             "schema_version": STORAGE_VERSION,
             "location": "bench",
             "warming": False,
@@ -25,7 +25,11 @@ class StarterStore:
             "active_cycle": None,
             "feed_history": [],
             "events": [],
+            "feed_count": 0,
+            "feed_inputs": {},
         }
+        stored = await self._store.async_load() or {}
+        return {**defaults, **stored, "schema_version": STORAGE_VERSION}
 
     async def save(self, data: dict[str, Any]) -> None:
         """Save state."""

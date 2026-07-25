@@ -4,6 +4,7 @@ from homeassistant.components.button import ButtonEntity, ButtonEntityDescriptio
 from .entity import StarterEntity
 
 BUTTONS = (
+    ButtonEntityDescription(key="record_feed", translation_key="record_feed"),
     ButtonEntityDescription(key="mark_peak", translation_key="mark_peak"),
     ButtonEntityDescription(key="refrigerate", translation_key="refrigerate"),
     ButtonEntityDescription(key="remove_from_fridge", translation_key="remove_from_fridge"),
@@ -21,7 +22,9 @@ class StarterButton(StarterEntity, ButtonEntity):
         self.entity_description = description
 
     async def async_press(self):
-        if self.entity_description.key == "mark_peak":
+        if self.entity_description.key == "record_feed":
+            await self.coordinator.record_feed_from_inputs()
+        elif self.entity_description.key == "mark_peak":
             await self.coordinator.mark_peak()
         elif self.entity_description.key == "refrigerate":
             await self.coordinator.mutate("refrigerated", {"location": "refrigerator", "warming": False})

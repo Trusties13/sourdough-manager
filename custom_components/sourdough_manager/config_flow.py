@@ -8,16 +8,28 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_DEFAULT_FLOUR,
+    CONF_DEFAULT_FLOUR_AMOUNT,
+    CONF_DEFAULT_STARTER,
     CONF_DEFAULT_TEMPERATURE,
+    CONF_DEFAULT_WATER,
+    CONF_PROGRAMME,
     CONF_REMINDER_DAYS,
     CONF_STARTER_HYDRATION,
     CONF_STARTER_NAME,
     CONF_TEMPERATURE_ENTITY,
+    CONF_VESSEL_TARE,
     DEFAULT_FLOUR,
+    DEFAULT_FLOUR_AMOUNT,
     DEFAULT_HYDRATION,
+    DEFAULT_PROGRAMME,
     DEFAULT_REMINDER_DAYS,
+    DEFAULT_STARTER,
     DEFAULT_TEMPERATURE,
+    DEFAULT_VESSEL_TARE,
+    DEFAULT_WATER,
     DOMAIN,
+    FLOUR_TYPES,
+    PROGRAMMES,
 )
 
 
@@ -27,7 +39,12 @@ def _schema(defaults: dict, include_name: bool) -> vol.Schema:
         fields[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "Main Starter"))] = str
     fields.update({
         vol.Required(CONF_STARTER_HYDRATION, default=defaults.get(CONF_STARTER_HYDRATION, DEFAULT_HYDRATION)): vol.All(vol.Coerce(float), vol.Range(min=1, max=300)),
-        vol.Required(CONF_DEFAULT_FLOUR, default=defaults.get(CONF_DEFAULT_FLOUR, DEFAULT_FLOUR)): selector.SelectSelector(selector.SelectSelectorConfig(options=["bread_flour", "plain_flour", "wholemeal_wheat", "rye", "spelt", "custom_blend", "other"], translation_key="flour")),
+        vol.Required(CONF_DEFAULT_FLOUR, default=defaults.get(CONF_DEFAULT_FLOUR, DEFAULT_FLOUR)): selector.SelectSelector(selector.SelectSelectorConfig(options=list(FLOUR_TYPES), translation_key="flour")),
+        vol.Required(CONF_DEFAULT_STARTER, default=defaults.get(CONF_DEFAULT_STARTER, DEFAULT_STARTER)): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=5000)),
+        vol.Required(CONF_DEFAULT_WATER, default=defaults.get(CONF_DEFAULT_WATER, DEFAULT_WATER)): vol.All(vol.Coerce(float), vol.Range(min=0, max=5000)),
+        vol.Required(CONF_DEFAULT_FLOUR_AMOUNT, default=defaults.get(CONF_DEFAULT_FLOUR_AMOUNT, DEFAULT_FLOUR_AMOUNT)): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=5000)),
+        vol.Required(CONF_VESSEL_TARE, default=defaults.get(CONF_VESSEL_TARE, DEFAULT_VESSEL_TARE)): vol.All(vol.Coerce(float), vol.Range(min=0, max=5000)),
+        vol.Required(CONF_PROGRAMME, default=defaults.get(CONF_PROGRAMME, DEFAULT_PROGRAMME)): selector.SelectSelector(selector.SelectSelectorConfig(options=list(PROGRAMMES), translation_key="programme")),
         vol.Optional(CONF_TEMPERATURE_ENTITY, default=defaults.get(CONF_TEMPERATURE_ENTITY)): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor", device_class="temperature")),
         vol.Required(CONF_DEFAULT_TEMPERATURE, default=defaults.get(CONF_DEFAULT_TEMPERATURE, DEFAULT_TEMPERATURE)): vol.All(vol.Coerce(float), vol.Range(min=0, max=40)),
         vol.Required(CONF_REMINDER_DAYS, default=defaults.get(CONF_REMINDER_DAYS, DEFAULT_REMINDER_DAYS)): vol.All(vol.Coerce(int), vol.Range(min=1, max=90)),

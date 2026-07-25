@@ -9,6 +9,12 @@ Each configured starter becomes its own Home Assistant device. The integration c
 - UI config flow and options flow
 - Multiple starters, with one device per starter
 - Atomic `sourdough_manager.record_feed` action
+- Dashboard-friendly feed inputs and a one-tap **Record feed** button
+- Remembered starter, water, flour and flour-type values
+- Optional empty-jar tare and total weight with jar
+- Suggested discard, water and flour quantities
+- Next-feed time, feeding count and plain-English instructions
+- Mature, new-starter and refrigerated maintenance programmes
 - Feed ratio, resulting hydration and current-weight calculations
 - Recently fed, fermenting, approaching peak, at peak, falling, hungry, refrigerated and warming states
 - Conservative peak estimate and window
@@ -40,6 +46,28 @@ Copy `custom_components/sourdough_manager` to:
 Restart Home Assistant, then add the integration through **Settings → Devices & services**.
 
 ## Record a feed
+
+For everyday use, add the generated feed controls to a dashboard:
+
+- Starter retained
+- Water added
+- Flour added
+- Feed flour type
+- Record feed
+
+Adjust only the values that changed and press **Record feed**. The integration
+captures all displayed values together, recalculates the cycle and remembers the
+values for next time. Developer Tools are not required.
+
+The configuration options set the initial feed amounts, empty-jar weight and
+programme:
+
+- **Mature starter** uses the predicted peak window to suggest the next feed.
+- **New starter programme** provides Day 1–7+ guidance, using 24-hour feeds
+  initially and 12-hour feeds from Day 6.
+- **Refrigerated maintenance** uses the configured refrigerated reminder.
+
+The action remains available for automations and retrospective entries:
 
 Use **Developer tools → Actions** or call the action from a script or dashboard:
 
@@ -76,6 +104,12 @@ Typical generated entities include:
 - Prediction confidence
 - Temperature at feed
 - Last peak duration
+- Starter retained, water added, flour added and flour type controls
+- Record feed
+- Suggested discard, water and flour
+- Total weight including the empty jar
+- Next feed due, total feedings and next feeding instructions
+- Optional programme day and phase
 - Mark peak
 - Refrigerate
 - Remove from fridge

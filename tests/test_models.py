@@ -18,6 +18,10 @@ cycle_status = models.cycle_status
 feed_ratio = models.feed_ratio
 predict_peak = models.predict_peak
 resulting_hydration = models.resulting_hydration
+feeding_instruction = models.feeding_instruction
+next_feed_time = models.next_feed_time
+programme_day = models.programme_day
+programme_phase = models.programme_phase
 
 
 def test_feed_calculations():
@@ -41,3 +45,18 @@ def test_cycle_state():
     assert cycle_status(data, datetime(2026, 1, 1, 6, tzinfo=UTC)) == "approaching_peak"
     assert cycle_status(data, datetime(2026, 1, 1, 8, tzinfo=UTC)) == "at_peak"
     assert cycle_progress(data, datetime(2026, 1, 1, 4, tzinfo=UTC)) == 50
+
+
+def test_programmes_and_instructions():
+    data = {
+        "feed_count": 10,
+        "current_weight_g": 90,
+        "location": "bench",
+        "active_cycle": {"fed_at": "2026-01-01T00:00:00+00:00"},
+    }
+    assert programme_day(data) == 6
+    assert programme_phase(data, "new_starter") == "activation"
+    assert next_feed_time(data, "new_starter", 14) == datetime(2026, 1, 1, 12, tzinfo=UTC)
+    assert feeding_instruction(data, "mature", 30, 30, 30) == (
+        "Retain 30 g starter, discard 60 g, then add 30 g water and 30 g flour."
+    )

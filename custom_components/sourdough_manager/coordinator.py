@@ -13,11 +13,19 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_DEFAULT_FLOUR,
+    CONF_DEFAULT_FLOUR_AMOUNT,
+    CONF_DEFAULT_STARTER,
     CONF_DEFAULT_TEMPERATURE,
+    CONF_DEFAULT_WATER,
     CONF_STARTER_HYDRATION,
     CONF_TEMPERATURE_ENTITY,
+    DEFAULT_FLOUR,
+    DEFAULT_FLOUR_AMOUNT,
     DEFAULT_HYDRATION,
+    DEFAULT_STARTER,
     DEFAULT_TEMPERATURE,
+    DEFAULT_WATER,
     DOMAIN,
 )
 from .models import feed_ratio, predict_peak, resulting_hydration
@@ -33,7 +41,19 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.store = StarterStore(hass, entry.entry_id)
 
     async def async_load(self) -> None:
-        self.async_set_updated_data(await self.store.load())
+        data = await self.store.load()
+        data["feed_inputs"] = {
+            "starter_retained_g": self._option(CONF_DEFAULT_STARTER, DEFAULT_STARTER),
+            "water_added_g": self._option(CONF_DEFAULT_WATER, DEFAULT_WATER),
+            "flour_added_g": self._option(CONF_DEFAULT_FLOUR_AMOUNT, DEFAULT_FLOUR_AMOUNT),
+            "flour_type": self._option(CONF_DEFAULT_FLOUR, DEFAULT_FLOUR),
+            **data.get("feed_inputs", {}),
+        }
+        self.async_set_updated_data(data)
+
+    def _option(self, key: str, default: Any) -> Any:
+        """Return an option, falling back to config data."""
+        return self.entry.options.get(key, self.entry.data.get(key, default))
 
     def temperature(self) -> float:
         entity_id = self.entry.options.get(CONF_TEMPERATURE_ENTITY, self.entry.data.get(CONF_TEMPERATURE_ENTITY))
@@ -67,13 +87,40 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "total_g": starter + water + flour,
             "feed_ratio": feed_ratio(starter, water, flour),
             "hydration_percent": hydration,
-            "flour_type": call.get("flour_type"),
+            "flour_type": call.get("flour_type") or self.data["feed_inputs"]["flour_type"],
             "temperature_c": temperature,
             "notes": call.get("notes", ""),
             "actual_peak_at": None,
             "prediction": asdict(prediction),
         }
-        await self.mutate("feed_recorded", {"active_cycle": cycle, "current_weight_g": cycle["total_g"], "location": "bench", "warming": False})
+        inputs = {
+            "starter_retained_g": starter,
+            "water_added_g": water,
+            "flour_added_g": flour,
+            "flour_type": cycle["flour_type"],
+        }
+        await self.mutate(
+            "feed_recorded",
+            {
+                "active_cycle": cycle,
+                "current_weight_g": cycle["total_g"],
+                "location": "bench",
+                "warming": False,
+                "feed_count": int(self.data.get("feed_count", 0)) + 1,
+                "feed_inputs": inputs,
+            },
+        )
+
+    async def record_feed_from_inputs(self) -> None:
+        """Atomically record the dashboard feed inputs."""
+        await self.record_feed(dict(self.data["feed_inputs"]))
+
+    async def update_feed_input(self, key: str, value: Any) -> None:
+        """Persist one dashboard feed input."""
+        inputs = {**self.data.get("feed_inputs", {}), key: value}
+        data = {**self.data, "feed_inputs": inputs}
+        await self.store.save(data)
+        self.async_set_updated_data(data)
 
     async def mark_peak(self) -> None:
         cycle = dict(self.data.get("active_cycle") or {})
