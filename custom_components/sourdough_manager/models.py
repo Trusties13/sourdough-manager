@@ -106,6 +106,32 @@ def human_clock_range(start: str | time, end: str | time) -> str:
     return f"{_format(start)} to {_format(end)}"
 
 
+def overdue_notification_copy(
+    starter_name: str, hours_overdue: float
+) -> tuple[str, str]:
+    """Return progressively firmer overdue notification copy."""
+    delay = human_duration(hours_overdue)
+    if hours_overdue < 2:
+        return (
+            f"{starter_name} feeding is due",
+            f"{starter_name} is now due to be fed.",
+        )
+    if hours_overdue < 12:
+        return (
+            f"{starter_name} feeding is overdue",
+            f"{starter_name} is {delay} overdue. Please feed it when you can.",
+        )
+    if hours_overdue < 24:
+        return (
+            f"{starter_name} needs feeding",
+            f"{starter_name} is {delay} overdue and needs attention soon.",
+        )
+    return (
+        f"{starter_name} is seriously overdue",
+        f"{starter_name} is {delay} overdue. Please feed it as soon as possible.",
+    )
+
+
 def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any]:
     """Reduce an older detailed store to the focused schema."""
     last_fed = old.get("last_fed")
