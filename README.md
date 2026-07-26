@@ -26,6 +26,8 @@ Each starter is represented by one Home Assistant device.
 - Stable per-type notification tags, preventing repeated alerts from stacking
 - Optional text-to-speech reminders on one or more media players
 - Independent audio lead time and repeat interval
+- Optional red-flash reminders on selected colour lights
+- Automatic restoration of each reminder light's prior state and colour
 - Optional confirmation when a feed is recorded
 - Duplicate protection for rapid physical-button presses
 - Human-friendly configuration summaries on the starter device
@@ -86,6 +88,8 @@ The integration creates:
 - Audio reminder lead time
 - Audio reminder interval
 - Last audio reminder
+- Light reminder targets
+- Last light reminder
 
 After feeding the starter, press **Fed now**. The deadline is calculated from
 the selected storage location and its configured frequency.
@@ -110,6 +114,7 @@ Open **Settings → Devices & services → Sourdough Manager → Configure**.
 - **Audio targets:** one or more media players
 - **Audio reminder lead time:** when spoken reminders begin
 - **Audio reminder interval:** independent cadence for repeated announcements
+- **Light reminder targets:** colour-capable lights to flash red when due
 
 Changing a frequency immediately recalculates the next deadline.
 The integration sends one early reminder, then sends an overdue reminder every
@@ -126,6 +131,12 @@ Audio reminders use Home Assistant's standard `tts.speak` action. They follow
 the same quiet hours and snooze state as push notifications, skip unavailable
 media players, use the escalating overdue wording and stop as soon as a feed is
 recorded.
+
+Selected reminder lights flash red three times when feeding becomes due and at
+the configured overdue reminder interval. Light reminders respect quiet hours
+and snooze. Each light's on/off state, brightness, colour mode, colour and
+effect are captured before flashing and restored afterwards. Originally-off
+lights finish off after their previous colour settings have been reapplied.
 
 ## Physical button or NFC tag
 
