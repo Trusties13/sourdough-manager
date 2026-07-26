@@ -6,15 +6,23 @@ from homeassistant.helpers.entity import EntityCategory
 
 from .const import (
     CONF_BENCH_INTERVAL,
+    CONF_CONFIRM_FEED,
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_NOTIFICATION_TARGETS,
+    CONF_OVERDUE_INTERVAL,
+    CONF_QUIET_END,
+    CONF_QUIET_HOURS_ENABLED,
+    CONF_QUIET_START,
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
+    DEFAULT_OVERDUE_INTERVAL,
+    DEFAULT_QUIET_END,
+    DEFAULT_QUIET_START,
 )
 from .entity import StarterEntity
-from .models import human_duration, overdue_hours, parse_datetime
+from .models import human_clock_range, human_duration, overdue_hours, parse_datetime
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -42,6 +50,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 DEFAULT_DUE_SOON,
             ),
             NotificationTargetsSensor(entry.runtime_data),
+            OverdueIntervalSensor(entry.runtime_data),
+            QuietHoursSensor(entry.runtime_data),
+            FeedConfirmationSensor(entry.runtime_data),
+            LastReminderSentSensor(entry.runtime_data),
         ]
     )
 
@@ -132,3 +144,82 @@ class NotificationTargetsSensor(StarterEntity, SensorEntity):
     def extra_state_attributes(self):
         targets = self.coordinator.option(CONF_NOTIFICATION_TARGETS, [])
         return {"entity_ids": [targets] if isinstance(targets, str) else targets}
+
+
+class OverdueIntervalSensor(DurationSettingSensor):
+    """Configured repeat interval for overdue reminders."""
+
+    def __init__(self, coordinator):
+        StarterEntity.__init__(self, coordinator, "overdue_reminder_interval")
+        self._attr_translation_key = "overdue_reminder_interval"
+
+    @property
+    def native_value(self):
+        minutes = float(
+            self.coordinator.option(
+                CONF_OVERDUE_INTERVAL, DEFAULT_OVERDUE_INTERVAL
+            )
+        )
+        return human_duration(minutes / 60)
+
+    @property
+    def extra_state_attributes(self):
+        return {
+            "minutes": float(
+                self.coordinator.option(
+                    CONF_OVERDUE_INTERVAL, DEFAULT_OVERDUE_INTERVAL
+                )
+            )
+        }
+
+
+class QuietHoursSensor(StarterEntity, SensorEntity):
+    """Configured notification quiet period."""
+
+    _attr_translation_key = "quiet_hours"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "quiet_hours")
+
+    @property
+    def native_value(self):
+        if not bool(self.coordinator.option(CONF_QUIET_HOURS_ENABLED, False)):
+            return "Disabled"
+        return human_clock_range(
+            self.coordinator.option(CONF_QUIET_START, DEFAULT_QUIET_START),
+            self.coordinator.option(CONF_QUIET_END, DEFAULT_QUIET_END),
+        )
+
+
+class FeedConfirmationSensor(StarterEntity, SensorEntity):
+    """Whether feed confirmation notifications are enabled."""
+
+    _attr_translation_key = "feed_confirmation"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "feed_confirmation")
+
+    @property
+    def native_value(self):
+        return (
+            "Enabled"
+            if bool(self.coordinator.option(CONF_CONFIRM_FEED, False))
+            else "Disabled"
+        )
+
+
+class LastReminderSentSensor(StarterEntity, SensorEntity):
+    """Timestamp of the most recent feeding reminder."""
+
+    _attr_translation_key = "last_reminder_sent"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "last_reminder_sent")
+
+    @property
+    def native_value(self):
+        return parse_datetime(self.coordinator.data.get("last_reminder_sent_at"))
