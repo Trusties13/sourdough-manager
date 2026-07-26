@@ -7,60 +7,70 @@ from homeassistant.const import CONF_NAME
 from homeassistant.helpers import selector
 
 from .const import (
-    CONF_DEFAULT_FLOUR,
-    CONF_DEFAULT_FLOUR_AMOUNT,
-    CONF_DEFAULT_STARTER,
-    CONF_DEFAULT_TEMPERATURE,
-    CONF_DEFAULT_WATER,
-    CONF_PROGRAMME,
-    CONF_REMINDER_DAYS,
-    CONF_STARTER_HYDRATION,
+    CONF_BENCH_INTERVAL,
+    CONF_DUE_SOON,
+    CONF_FRIDGE_INTERVAL,
+    CONF_LAST_FED,
+    CONF_LOCATION,
     CONF_STARTER_NAME,
-    CONF_TEMPERATURE_ENTITY,
-    CONF_VESSEL_TARE,
-    DEFAULT_FLOUR,
-    DEFAULT_FLOUR_AMOUNT,
-    DEFAULT_HYDRATION,
-    DEFAULT_PROGRAMME,
-    DEFAULT_REMINDER_DAYS,
-    DEFAULT_STARTER,
-    DEFAULT_TEMPERATURE,
-    DEFAULT_VESSEL_TARE,
-    DEFAULT_WATER,
+    DEFAULT_BENCH_INTERVAL,
+    DEFAULT_DUE_SOON,
+    DEFAULT_FRIDGE_INTERVAL,
     DOMAIN,
-    FLOUR_TYPES,
-    PROGRAMMES,
+    LOCATIONS,
 )
 
 
-def _schema(defaults: dict, include_name: bool) -> vol.Schema:
+def _interval(value: float) -> float:
+    return vol.All(vol.Coerce(float), vol.Range(min=1, max=2160))(value)
+
+
+def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
     fields: dict = {}
-    if include_name:
+    if include_identity:
         fields[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "Main Starter"))] = str
-    fields.update({
-        vol.Required(CONF_STARTER_HYDRATION, default=defaults.get(CONF_STARTER_HYDRATION, DEFAULT_HYDRATION)): vol.All(vol.Coerce(float), vol.Range(min=1, max=300)),
-        vol.Required(CONF_DEFAULT_FLOUR, default=defaults.get(CONF_DEFAULT_FLOUR, DEFAULT_FLOUR)): selector.SelectSelector(selector.SelectSelectorConfig(options=list(FLOUR_TYPES), translation_key="flour")),
-        vol.Required(CONF_DEFAULT_STARTER, default=defaults.get(CONF_DEFAULT_STARTER, DEFAULT_STARTER)): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=5000)),
-        vol.Required(CONF_DEFAULT_WATER, default=defaults.get(CONF_DEFAULT_WATER, DEFAULT_WATER)): vol.All(vol.Coerce(float), vol.Range(min=0, max=5000)),
-        vol.Required(CONF_DEFAULT_FLOUR_AMOUNT, default=defaults.get(CONF_DEFAULT_FLOUR_AMOUNT, DEFAULT_FLOUR_AMOUNT)): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=5000)),
-        vol.Required(CONF_VESSEL_TARE, default=defaults.get(CONF_VESSEL_TARE, DEFAULT_VESSEL_TARE)): vol.All(vol.Coerce(float), vol.Range(min=0, max=5000)),
-        vol.Required(CONF_PROGRAMME, default=defaults.get(CONF_PROGRAMME, DEFAULT_PROGRAMME)): selector.SelectSelector(selector.SelectSelectorConfig(options=list(PROGRAMMES), translation_key="programme")),
-        vol.Optional(CONF_TEMPERATURE_ENTITY, default=defaults.get(CONF_TEMPERATURE_ENTITY)): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor", device_class="temperature")),
-        vol.Required(CONF_DEFAULT_TEMPERATURE, default=defaults.get(CONF_DEFAULT_TEMPERATURE, DEFAULT_TEMPERATURE)): vol.All(vol.Coerce(float), vol.Range(min=0, max=40)),
-        vol.Required(CONF_REMINDER_DAYS, default=defaults.get(CONF_REMINDER_DAYS, DEFAULT_REMINDER_DAYS)): vol.All(vol.Coerce(int), vol.Range(min=1, max=90)),
-    })
+        fields[vol.Required(CONF_LOCATION, default=defaults.get(CONF_LOCATION, "bench"))] = (
+            selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=list(LOCATIONS), translation_key="location"
+                )
+            )
+        )
+        fields[vol.Optional(CONF_LAST_FED)] = selector.DateTimeSelector()
+    fields.update(
+        {
+            vol.Required(
+                CONF_BENCH_INTERVAL,
+                default=defaults.get(CONF_BENCH_INTERVAL, DEFAULT_BENCH_INTERVAL),
+            ): _interval,
+            vol.Required(
+                CONF_FRIDGE_INTERVAL,
+                default=defaults.get(CONF_FRIDGE_INTERVAL, DEFAULT_FRIDGE_INTERVAL),
+            ): _interval,
+            vol.Required(
+                CONF_DUE_SOON,
+                default=defaults.get(CONF_DUE_SOON, DEFAULT_DUE_SOON),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=168)),
+        }
+    )
     return vol.Schema(fields)
 
 
 class SourdoughConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Configure a starter."""
+
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
         if user_input is None:
             return self.async_show_form(step_id="user", data_schema=_schema({}, True))
         name = user_input.pop(CONF_NAME)
-        return self.async_create_entry(title=name, data={CONF_STARTER_NAME: name, **user_input})
+        last_fed = user_input.get(CONF_LAST_FED)
+        if hasattr(last_fed, "isoformat"):
+            user_input[CONF_LAST_FED] = last_fed.isoformat()
+        return self.async_create_entry(
+            title=name, data={CONF_STARTER_NAME: name, **user_input}
+        )
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -68,10 +78,12 @@ class SourdoughConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class SourdoughOptionsFlow(config_entries.OptionsFlow):
-    """Edit starter settings."""
+    """Edit feeding frequencies."""
 
     async def async_step_init(self, user_input=None):
         if user_input is not None:
             return self.async_create_entry(data=user_input)
         defaults = {**self.config_entry.data, **self.config_entry.options}
-        return self.async_show_form(step_id="init", data_schema=_schema(defaults, False))
+        return self.async_show_form(
+            step_id="init", data_schema=_schema(defaults, False)
+        )

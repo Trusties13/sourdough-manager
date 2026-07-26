@@ -2,49 +2,59 @@
 from homeassistant.const import Platform
 
 DOMAIN = "sourdough_manager"
-PLATFORMS = [Platform.SENSOR, Platform.BUTTON, Platform.NUMBER, Platform.SELECT]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SELECT]
+
 STORAGE_VERSION = 2
+SCHEMA_VERSION = 3
 STORAGE_KEY_PREFIX = f"{DOMAIN}.starter"
 
 CONF_STARTER_NAME = "starter_name"
-CONF_STARTER_HYDRATION = "starter_hydration"
-CONF_DEFAULT_FLOUR = "default_flour"
-CONF_TEMPERATURE_ENTITY = "temperature_entity"
-CONF_DEFAULT_TEMPERATURE = "default_temperature"
-CONF_REMINDER_DAYS = "refrigerated_reminder_days"
-CONF_VESSEL_TARE = "vessel_tare_g"
-CONF_DEFAULT_STARTER = "default_starter_retained_g"
-CONF_DEFAULT_WATER = "default_water_added_g"
-CONF_DEFAULT_FLOUR_AMOUNT = "default_flour_added_g"
-CONF_PROGRAMME = "programme"
+CONF_LOCATION = "location"
+CONF_BENCH_INTERVAL = "bench_interval_hours"
+CONF_FRIDGE_INTERVAL = "fridge_interval_hours"
+CONF_DUE_SOON = "due_soon_hours"
+CONF_LAST_FED = "last_fed"
 
-DEFAULT_HYDRATION = 100.0
-DEFAULT_TEMPERATURE = 22.0
-DEFAULT_REMINDER_DAYS = 14
-DEFAULT_FLOUR = "bread_flour"
-DEFAULT_VESSEL_TARE = 0.0
-DEFAULT_STARTER = 30.0
-DEFAULT_WATER = 30.0
-DEFAULT_FLOUR_AMOUNT = 30.0
-DEFAULT_PROGRAMME = "mature"
+LOCATION_BENCH = "bench"
+LOCATION_FRIDGE = "refrigerator"
+LOCATIONS = (LOCATION_BENCH, LOCATION_FRIDGE)
 
-FLOUR_TYPES = (
-    "bread_flour",
-    "plain_flour",
-    "wholemeal_wheat",
-    "rye",
-    "spelt",
-    "custom_blend",
-    "other",
-)
-PROGRAMMES = ("mature", "new_starter", "refrigerated")
+DEFAULT_BENCH_INTERVAL = 48.0
+DEFAULT_FRIDGE_INTERVAL = 168.0
+DEFAULT_DUE_SOON = 12.0
 
-EVENTS = (
-    "feed_recorded",
-    "peak_marked",
-    "refrigerated",
-    "removed_from_fridge",
-    "cycle_cancelled",
-    "discard_recorded",
-    "use_recorded",
+EVENT_FEED_RECORDED = f"{DOMAIN}_feed_recorded"
+EVENT_DUE_SOON = f"{DOMAIN}_feed_due_soon"
+EVENT_OVERDUE = f"{DOMAIN}_feed_overdue"
+EVENT_LOCATION_CHANGED = f"{DOMAIN}_location_changed"
+
+OBSOLETE_ENTITY_KEYS = (
+    "status",
+    "expected_peak",
+    "peak_window_start",
+    "peak_window_end",
+    "current_weight",
+    "feed_ratio",
+    "hydration",
+    "cycle_progress",
+    "prediction_confidence",
+    "average_temperature",
+    "last_peak_duration",
+    "total_weight_with_vessel",
+    "suggested_discard",
+    "suggested_water",
+    "suggested_flour",
+    "feeding_count",
+    "programme_day",
+    "programme_phase",
+    "instructions",
+    "mark_peak",
+    "record_feed",
+    "refrigerate",
+    "remove_from_fridge",
+    "cancel_cycle",
+    "starter_retained_g",
+    "water_added_g",
+    "flour_added_g",
+    "flour_type",
 )

@@ -1,40 +1,27 @@
-"""Dashboard-friendly feed selections."""
-from __future__ import annotations
+"""Storage location control."""
+from homeassistant.components.select import SelectEntity
 
-from homeassistant.components.select import SelectEntity, SelectEntityDescription
-
-from .const import FLOUR_TYPES
+from .const import LOCATIONS
 from .entity import StarterEntity
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Set up feed selectors."""
-    async_add_entities(
-        [
-            StarterFeedSelect(
-                entry.runtime_data,
-                SelectEntityDescription(
-                    key="flour_type",
-                    translation_key="feed_flour_type",
-                    options=list(FLOUR_TYPES),
-                ),
-            )
-        ]
-    )
+    """Set up the storage location selector."""
+    async_add_entities([StorageLocationSelect(entry.runtime_data)])
 
 
-class StarterFeedSelect(StarterEntity, SelectEntity):
-    """A persistent feed selection."""
+class StorageLocationSelect(StarterEntity, SelectEntity):
+    """Bench or refrigerator storage."""
 
-    def __init__(self, coordinator, description):
-        super().__init__(coordinator, description.key)
-        self.entity_description = description
+    _attr_translation_key = "storage_location"
+    _attr_options = list(LOCATIONS)
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "storage_location")
 
     @property
     def current_option(self):
-        """Return the selected option."""
-        return self.coordinator.data["feed_inputs"][self.entity_description.key]
+        return self.coordinator.data["location"]
 
     async def async_select_option(self, option: str) -> None:
-        """Update the selected option."""
-        await self.coordinator.update_feed_input(self.entity_description.key, option)
+        await self.coordinator.set_location(option)
