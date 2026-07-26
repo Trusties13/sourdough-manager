@@ -19,6 +19,7 @@ from .const import (
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
     CONF_LIGHT_TARGETS,
+    CONF_LIGHT_COLOR,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
@@ -32,6 +33,7 @@ from .const import (
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
+    DEFAULT_LIGHT_COLOR,
     DEFAULT_OVERDUE_INTERVAL,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
@@ -157,6 +159,12 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
             ): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="light", multiple=True)
             ),
+            vol.Required(
+                CONF_LIGHT_COLOR,
+                default=defaults.get(
+                    CONF_LIGHT_COLOR, DEFAULT_LIGHT_COLOR
+                ),
+            ): selector.ColorRGBSelector(),
         }
     )
     return vol.Schema(fields)
