@@ -15,6 +15,7 @@ from .const import (
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
     CONF_LOCATION,
+    CONF_NOTIFICATION_TARGETS,
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
@@ -79,11 +80,70 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         is_due, is_due_soon = self.schedule_state()
         if is_due_soon and not self._was_due_soon:
             self._fire(EVENT_DUE_SOON)
+        if is_due_soon:
+            await self._async_send_reminder()
+        if is_due:
+            await self._async_send_overdue_reminder()
         if is_due and not self._was_due:
             self._fire(EVENT_OVERDUE)
         self._was_due = is_due
         self._was_due_soon = is_due_soon
         return self.data
+
+    async def _async_send_reminder(self) -> None:
+        """Send at most one configured notification for the current deadline."""
+        targets = self.option(CONF_NOTIFICATION_TARGETS, [])
+        if isinstance(targets, str):
+            targets = [targets]
+        due = self.next_due()
+        if not targets or due is None:
+            return
+        due_key = due.isoformat()
+        if self.data.get("last_reminder_for") == due_key:
+            return
+        data = {**self.data, "last_reminder_for": due_key}
+        await self.store.save(data)
+        self.async_set_updated_data(data)
+        await self._async_notify(
+            targets,
+            (
+                f"{self.entry.title} is due to be fed at "
+                f"{dt_util.as_local(due).strftime('%-I:%M %p on %A, %-d %B')}."
+            ),
+        )
+
+    async def _async_send_overdue_reminder(self) -> None:
+        """Repeat an overdue notification every 30 minutes until fed."""
+        targets = self.option(CONF_NOTIFICATION_TARGETS, [])
+        if isinstance(targets, str):
+            targets = [targets]
+        due = self.next_due()
+        if not targets or due is None:
+            return
+        now = dt_util.utcnow()
+        last_sent = parse_datetime(self.data.get("last_overdue_reminder_at"))
+        if last_sent and now - last_sent < timedelta(minutes=30):
+            return
+        data = {**self.data, "last_overdue_reminder_at": now.isoformat()}
+        await self.store.save(data)
+        self.async_set_updated_data(data)
+        await self._async_notify(
+            targets,
+            f"{self.entry.title} is overdue for feeding. Feed it when you can.",
+        )
+
+    async def _async_notify(self, targets: list[str], message: str) -> None:
+        """Send a reminder to the configured notification entities."""
+        await self.hass.services.async_call(
+            "notify",
+            "send_message",
+            {
+                "title": "Sourdough feeding reminder",
+                "message": message,
+            },
+            target={"entity_id": targets},
+            blocking=False,
+        )
 
     def _fire(self, event_type: str) -> None:
         """Fire an automation-friendly event."""
@@ -102,7 +162,12 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         fed_at = fed_at or dt_util.utcnow()
         if fed_at.tzinfo is None:
             fed_at = fed_at.replace(tzinfo=UTC)
-        data = {**self.data, "last_fed": fed_at.isoformat()}
+        data = {
+            **self.data,
+            "last_fed": fed_at.isoformat(),
+            "last_reminder_for": None,
+            "last_overdue_reminder_at": None,
+        }
         await self.store.save(data)
         self._was_due = False
         self._was_due_soon = False
