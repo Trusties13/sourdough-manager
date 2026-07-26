@@ -1,53 +1,9 @@
-type: vertical-stack
-cards:
-  - type: heading
-    heading: Main Starter
-    icon: mdi:bread-slice
-  - type: tile
-    entity: sensor.main_starter_status
-    name: Starter status
-  - type: entities
-    title: Record a feed
-    entities:
-      - number.main_starter_starter_retained
-      - number.main_starter_water_added
-      - number.main_starter_flour_added
-      - select.main_starter_feed_flour_type
-      - sensor.main_starter_suggested_discard
-      - button.main_starter_record_feed
-  - type: markdown
-    content: >-
-      {{ states('sensor.main_starter_next_feeding_instructions') }}
-  - type: gauge
-    entity: sensor.main_starter_cycle_progress
-    name: Progress towards peak
-    min: 0
-    max: 100
-    severity:
-      green: 70
-      yellow: 90
-      red: 100
-  - type: entities
-    entities:
-      - sensor.main_starter_last_fed
-      - sensor.main_starter_expected_peak
-      - sensor.main_starter_feed_ratio
-      - sensor.main_starter_hydration
-      - sensor.main_starter_current_weight
-      - sensor.main_starter_total_weight_with_jar
-      - sensor.main_starter_next_feed_due
-      - sensor.main_starter_prediction_confidence
-  - type: horizontal-stack
-    cards:
-      - type: button
-        entity: button.main_starter_mark_peak
-        name: Mark peak
-        icon: mdi:chart-bell-curve
-      - type: button
-        entity: button.main_starter_refrigerate
-        name: Refrigerate
-        icon: mdi:fridge
-      - type: button
-        entity: button.main_starter_remove_from_fridge
-        name: Warm up
-        icon: mdi:thermometer-chevron-up
+type: entities
+title: Main Starter
+entities:
+  - select.main_starter_storage_location
+  - sensor.main_starter_last_fed
+  - sensor.main_starter_next_feed_due
+  - binary_sensor.main_starter_feed_due_soon
+  - binary_sensor.main_starter_feed_due
+  - button.main_starter_fed_now
