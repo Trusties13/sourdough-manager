@@ -11,13 +11,15 @@
           "last_fed": "Last fed",
           "bench_interval_hours": "Bench feed frequency",
           "fridge_interval_hours": "Fridge feed frequency",
-          "due_soon_hours": "Due-soon warning"
+          "due_soon_hours": "Reminder lead time",
+          "notification_targets": "Notification targets"
         },
         "data_description": {
           "last_fed": "Optional. Leave empty if the starter has not been fed yet.",
           "bench_interval_hours": "Hours between feeds while stored on the bench. Default: 48.",
           "fridge_interval_hours": "Hours between feeds while refrigerated. Default: 168.",
-          "due_soon_hours": "How many hours before the deadline the due-soon sensor turns on. Use 0 to disable."
+          "due_soon_hours": "How many hours before the deadline the first reminder is sent. Use 0 to disable the early reminder.",
+          "notification_targets": "Choose one or more notification entities. Overdue reminders repeat every 30 minutes until a feed is recorded."
         }
       }
     }
@@ -25,16 +27,18 @@
   "options": {
     "step": {
       "init": {
-        "title": "Feeding frequencies",
+        "title": "Feeding reminders",
         "data": {
           "bench_interval_hours": "Bench feed frequency",
           "fridge_interval_hours": "Fridge feed frequency",
-          "due_soon_hours": "Due-soon warning"
+          "due_soon_hours": "Reminder lead time",
+          "notification_targets": "Notification targets"
         },
         "data_description": {
           "bench_interval_hours": "Hours between feeds while stored on the bench.",
           "fridge_interval_hours": "Hours between feeds while refrigerated.",
-          "due_soon_hours": "Hours of advance warning. Use 0 to disable."
+          "due_soon_hours": "Hours before feeding is due to send the first reminder. Use 0 to disable the early reminder.",
+          "notification_targets": "Choose one or more notification entities. Overdue reminders repeat every 30 minutes until a feed is recorded."
         }
       }
     }
@@ -50,7 +54,11 @@
   "entity": {
     "sensor": {
       "last_fed": {"name": "Last fed"},
-      "next_feed_due": {"name": "Next feed due"}
+      "next_feed_due": {"name": "Next feed due"},
+      "bench_feed_frequency": {"name": "Bench feed frequency"},
+      "fridge_feed_frequency": {"name": "Fridge feed frequency"},
+      "reminder_lead_time": {"name": "Reminder lead time"},
+      "notification_targets": {"name": "Notification targets"}
     },
     "binary_sensor": {
       "feed_due": {"name": "Feed due"},
@@ -58,6 +66,9 @@
     },
     "button": {
       "fed_now": {"name": "Fed now"}
+    },
+    "datetime": {
+      "last_fed_time": {"name": "Set last fed time"}
     },
     "select": {
       "storage_location": {
