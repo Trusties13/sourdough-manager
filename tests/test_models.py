@@ -87,6 +87,30 @@ def test_overdue_notification_copy_gets_firmer():
     )
 
 
+def test_audio_reminder_has_independent_lead_time_and_interval():
+    due = datetime(2026, 7, 27, 9, tzinfo=UTC)
+    assert not models.audio_reminder_due(
+        datetime(2026, 7, 27, 6, tzinfo=UTC), due, 2, None, 60
+    )
+    assert models.audio_reminder_due(
+        datetime(2026, 7, 27, 7, tzinfo=UTC), due, 2, None, 60
+    )
+    assert not models.audio_reminder_due(
+        datetime(2026, 7, 27, 8, tzinfo=UTC),
+        due,
+        2,
+        datetime(2026, 7, 27, 7, 30, tzinfo=UTC),
+        60,
+    )
+    assert models.audio_reminder_due(
+        datetime(2026, 7, 27, 8, 30, tzinfo=UTC),
+        due,
+        2,
+        datetime(2026, 7, 27, 7, 30, tzinfo=UTC),
+        60,
+    )
+
+
 def test_migrates_existing_active_cycle_and_location():
     migrated = models.migrate_storage(
         {
@@ -106,4 +130,5 @@ def test_migrates_existing_active_cycle_and_location():
         "last_reminder_sent_at": None,
         "snoozed_until": None,
         "snooze_hours": "1",
+        "last_audio_reminder_at": None,
     }
