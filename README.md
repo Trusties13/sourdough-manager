@@ -24,6 +24,8 @@ Each starter is represented by one Home Assistant device.
 - Companion App notifications with **Fed now** and **Snooze** actions
 - Dynamic notification titles and progressively firmer overdue wording
 - Stable per-type notification tags, preventing repeated alerts from stacking
+- Optional text-to-speech reminders on one or more media players
+- Independent audio lead time and repeat interval
 - Optional confirmation when a feed is recorded
 - Duplicate protection for rapid physical-button presses
 - Human-friendly configuration summaries on the starter device
@@ -78,6 +80,12 @@ The integration creates:
 - Last reminder sent
 - Snooze duration
 - Snooze reminders
+- Audio reminders
+- Audio voice
+- Audio targets
+- Audio reminder lead time
+- Audio reminder interval
+- Last audio reminder
 
 After feeding the starter, press **Fed now**. The deadline is calculated from
 the selected storage location and its configured frequency.
@@ -97,6 +105,11 @@ Open **Settings → Devices & services → Sourdough Manager → Configure**.
 - **Overdue reminder interval:** minutes between reminders after feeding is due
 - **Quiet hours:** optional start and end times that suppress scheduled reminders
 - **Confirm recorded feeds:** optionally acknowledge successful feed logging
+- **Enable audio reminders:** speak reminders through selected media players
+- **Text-to-speech provider:** the Home Assistant TTS entity/voice to use
+- **Audio targets:** one or more media players
+- **Audio reminder lead time:** when spoken reminders begin
+- **Audio reminder interval:** independent cadence for repeated announcements
 
 Changing a frequency immediately recalculates the next deadline.
 The integration sends one early reminder, then sends an overdue reminder every
@@ -108,6 +121,11 @@ notification entities receive the same reminder text without action buttons.
 Due-soon, overdue and confirmation notifications use separate stable tags.
 Repeated overdue reminders replace the previous overdue alert, and their
 wording becomes firmer after 2, 12 and 24 hours overdue.
+
+Audio reminders use Home Assistant's standard `tts.speak` action. They follow
+the same quiet hours and snooze state as push notifications, skip unavailable
+media players, use the escalating overdue wording and stop as soon as a feed is
+recorded.
 
 ## Physical button or NFC tag
 
