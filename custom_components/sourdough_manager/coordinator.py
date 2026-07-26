@@ -412,7 +412,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     target={"entity_id": entity_id},
                     blocking=True,
                 )
-                await asyncio.sleep(0.35)
+                await asyncio.sleep(1.0)
                 if was_on:
                     await self.hass.services.async_call(
                         "light",
