@@ -137,7 +137,7 @@ def test_migrates_existing_active_cycle_and_location():
         "bench",
     )
     assert migrated == {
-        "schema_version": 3,
+        "schema_version": 4,
         "last_fed": "2026-07-25T09:00:00+00:00",
         "location": "refrigerator",
         "location_changed_at": None,
@@ -148,4 +148,5 @@ def test_migrates_existing_active_cycle_and_location():
         "snooze_hours": "1",
         "last_audio_reminder_at": None,
         "last_light_reminder_at": None,
+        "reminders_enabled": True,
     }
