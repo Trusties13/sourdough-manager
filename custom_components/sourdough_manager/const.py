@@ -6,8 +6,9 @@ PLATFORMS = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
-    Platform.DATETIME,
+    Platform.DATE,
     Platform.SELECT,
+    Platform.TIME,
 ]
 
 STORAGE_VERSION = 2
