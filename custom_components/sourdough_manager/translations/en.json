@@ -67,8 +67,11 @@
     "button": {
       "fed_now": {"name": "Fed now"}
     },
-    "datetime": {
-      "last_fed_time": {"name": "Set last fed time"}
+    "date": {
+      "last_fed_date": {"name": "Last fed date"}
+    },
+    "time": {
+      "last_fed_clock": {"name": "Last fed time"}
     },
     "select": {
       "storage_location": {

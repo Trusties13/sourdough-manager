@@ -64,6 +64,10 @@ def _remove_obsolete_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
             "select", DOMAIN, f"{entry.entry_id}_{key}"
         ):
             registry.async_remove(entity_id)
+    if entity_id := registry.async_get_entity_id(
+        "datetime", DOMAIN, f"{entry.entry_id}_last_fed_time"
+    ):
+        registry.async_remove(entity_id)
 
 
 async def _reload(hass: HomeAssistant, entry: ConfigEntry) -> None:

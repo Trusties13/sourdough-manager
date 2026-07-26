@@ -11,7 +11,7 @@ Each starter is represented by one Home Assistant device.
 ## Features
 
 - **Fed now** button for one-tap logging
-- Editable **Set last fed time** control for late logging
+- Compact **Last fed date** and **Last fed time** controls for late logging
 - Bench or fridge storage selector
 - Configurable bench frequency, defaulting to 48 hours
 - Configurable fridge frequency, defaulting to 168 hours (7 days)
@@ -58,7 +58,8 @@ The integration creates:
 - Feed due soon
 - Feed due
 - Fed now
-- Set last fed time
+- Last fed date
+- Last fed time
 - Bench feed frequency
 - Fridge feed frequency
 - Reminder lead time
@@ -83,12 +84,13 @@ Open **Settings → Devices & services → Sourdough Manager → Configure**.
 Changing a frequency immediately recalculates the next deadline.
 The integration sends one early reminder, then sends an overdue reminder every
 30 minutes after the deadline until **Fed now** is pressed or **Set last fed
-time** is changed.
+date** or **Last fed time** is changed.
 
 ## Record an earlier feed
 
-If you forgot to press **Fed now**, edit **Set last fed time** on the starter
-device. This recalculates the next deadline and resets the reminder cycle.
+If you forgot to press **Fed now**, edit **Last fed date** and/or **Last fed
+time** in the starter's Configuration section. This recalculates the next
+deadline and resets the reminder cycle.
 
 Automations can also record an earlier feed with this action:
 
