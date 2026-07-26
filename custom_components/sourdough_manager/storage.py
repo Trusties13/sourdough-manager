@@ -6,30 +6,33 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
-from .const import STORAGE_KEY_PREFIX, STORAGE_VERSION
+from .const import SCHEMA_VERSION, STORAGE_KEY_PREFIX, STORAGE_VERSION
+from .models import migrate_storage
 
 
 class StarterStore:
-    """Persist one starter's operational state."""
+    """Persist one starter's focused state."""
 
     def __init__(self, hass: HomeAssistant, entry_id: str) -> None:
-        self._store: Store[dict[str, Any]] = Store(hass, STORAGE_VERSION, f"{STORAGE_KEY_PREFIX}.{entry_id}")
+        self._store: Store[dict[str, Any]] = Store(
+            hass, STORAGE_VERSION, f"{STORAGE_KEY_PREFIX}.{entry_id}"
+        )
 
-    async def load(self) -> dict[str, Any]:
-        """Load state."""
-        defaults = {
-            "schema_version": STORAGE_VERSION,
-            "location": "bench",
-            "warming": False,
-            "current_weight_g": 0.0,
-            "active_cycle": None,
-            "feed_history": [],
-            "events": [],
-            "feed_count": 0,
-            "feed_inputs": {},
-        }
-        stored = await self._store.async_load() or {}
-        return {**defaults, **stored, "schema_version": STORAGE_VERSION}
+    async def load(self, default_location: str, initial_last_fed: str | None) -> dict[str, Any]:
+        """Load and migrate state."""
+        stored = await self._store.async_load()
+        if stored is None:
+            data = {
+                "schema_version": SCHEMA_VERSION,
+                "last_fed": initial_last_fed,
+                "location": default_location,
+                "location_changed_at": None,
+            }
+        else:
+            data = migrate_storage(stored, default_location)
+        if stored != data:
+            await self.save(data)
+        return data
 
     async def save(self, data: dict[str, Any]) -> None:
         """Save state."""
