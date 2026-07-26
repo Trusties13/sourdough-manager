@@ -14,6 +14,7 @@ from .const import (
     CONF_CONFIRM_FEED,
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
+    CONF_LIGHT_TARGETS,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
     CONF_QUIET_END,
@@ -72,6 +73,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             ),
             AudioIntervalSensor(entry.runtime_data),
             LastAudioReminderSensor(entry.runtime_data),
+            LightTargetsSensor(entry.runtime_data),
+            LastLightReminderSensor(entry.runtime_data),
         ]
     )
 
@@ -343,4 +346,46 @@ class LastAudioReminderSensor(StarterEntity, SensorEntity):
     def native_value(self):
         return parse_datetime(
             self.coordinator.data.get("last_audio_reminder_at")
+        )
+
+
+class LightTargetsSensor(StarterEntity, SensorEntity):
+    """Configured visual reminder targets."""
+
+    _attr_translation_key = "light_targets"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "light_targets")
+
+    @property
+    def native_value(self):
+        targets = self.coordinator.option(CONF_LIGHT_TARGETS, [])
+        if isinstance(targets, str):
+            targets = [targets]
+        if not targets:
+            return "Not configured"
+        names = [
+            self.hass.states.get(entity_id).name
+            if self.hass.states.get(entity_id)
+            else entity_id
+            for entity_id in targets
+        ]
+        return ", ".join(names)[:255]
+
+
+class LastLightReminderSensor(StarterEntity, SensorEntity):
+    """Timestamp of the most recent light reminder."""
+
+    _attr_translation_key = "last_light_reminder"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "last_light_reminder")
+
+    @property
+    def native_value(self):
+        return parse_datetime(
+            self.coordinator.data.get("last_light_reminder_at")
         )
