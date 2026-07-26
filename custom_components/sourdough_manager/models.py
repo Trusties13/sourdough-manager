@@ -132,6 +132,21 @@ def overdue_notification_copy(
     )
 
 
+def audio_reminder_due(
+    now: datetime,
+    due: datetime,
+    lead_hours: float,
+    last_sent: datetime | None,
+    interval_minutes: float,
+) -> bool:
+    """Return whether an audio reminder should be spoken now."""
+    if now < due - timedelta(hours=lead_hours):
+        return False
+    return last_sent is None or now - last_sent >= timedelta(
+        minutes=interval_minutes
+    )
+
+
 def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any]:
     """Reduce an older detailed store to the focused schema."""
     last_fed = old.get("last_fed")
@@ -148,4 +163,5 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         "last_reminder_sent_at": old.get("last_reminder_sent_at"),
         "snoozed_until": old.get("snoozed_until"),
         "snooze_hours": old.get("snooze_hours", "1"),
+        "last_audio_reminder_at": old.get("last_audio_reminder_at"),
     }
