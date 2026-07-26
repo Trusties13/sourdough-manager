@@ -27,6 +27,8 @@ class StarterStore:
                 "last_fed": initial_last_fed,
                 "location": default_location,
                 "location_changed_at": None,
+                "last_reminder_for": None,
+                "last_overdue_reminder_at": None,
             }
         else:
             data = migrate_storage(stored, default_location)
