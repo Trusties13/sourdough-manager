@@ -228,7 +228,6 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _, message = overdue_notification_copy(
                 self.entry.title, hours_overdue
             )
-        _, overdue_message = overdue_notification_copy(self.entry.title, 1)
         spoken = False
         for media_player in targets:
             state = self.hass.states.get(media_player)
@@ -311,6 +310,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise HomeAssistantError(
                 "A text-to-speech provider and audio target are required"
             )
+        _, overdue_message = overdue_notification_copy(self.entry.title, 1)
         spoken = False
         for media_player in targets:
             state = self.hass.states.get(media_player)
