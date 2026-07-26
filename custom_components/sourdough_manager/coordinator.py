@@ -10,6 +10,11 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    CONF_AUDIO_ENABLED,
+    CONF_AUDIO_INTERVAL,
+    CONF_AUDIO_LEAD_TIME,
+    CONF_AUDIO_TARGETS,
+    CONF_AUDIO_TTS_ENTITY,
     CONF_BENCH_INTERVAL,
     CONF_CONFIRM_FEED,
     CONF_DUE_SOON,
@@ -21,6 +26,8 @@ from .const import (
     CONF_QUIET_END,
     CONF_QUIET_HOURS_ENABLED,
     CONF_QUIET_START,
+    DEFAULT_AUDIO_INTERVAL,
+    DEFAULT_AUDIO_LEAD_TIME,
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
@@ -36,6 +43,7 @@ from .const import (
     LOCATION_BENCH,
 )
 from .models import (
+    audio_reminder_due,
     human_duration,
     next_feed_due,
     overdue_notification_copy,
@@ -100,6 +108,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await self._async_send_reminder()
         if is_due:
             await self._async_send_overdue_reminder()
+        await self._async_send_audio_reminder()
         if is_due and not self._was_due:
             self._fire(EVENT_OVERDUE)
         self._was_due = is_due
@@ -162,6 +171,65 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             title=title,
             notification_kind="overdue",
         )
+
+    async def _async_send_audio_reminder(self) -> None:
+        """Speak reminders on configured media players at its own cadence."""
+        if not bool(self.option(CONF_AUDIO_ENABLED, False)):
+            return
+        if self.notifications_paused():
+            return
+        tts_entity = self.option(CONF_AUDIO_TTS_ENTITY, None)
+        targets = self.option(CONF_AUDIO_TARGETS, [])
+        if isinstance(targets, str):
+            targets = [targets]
+        due = self.next_due()
+        if not tts_entity or not targets or due is None:
+            return
+        now = dt_util.utcnow()
+        if not audio_reminder_due(
+            now,
+            due,
+            float(
+                self.option(
+                    CONF_AUDIO_LEAD_TIME, DEFAULT_AUDIO_LEAD_TIME
+                )
+            ),
+            parse_datetime(self.data.get("last_audio_reminder_at")),
+            float(self.option(CONF_AUDIO_INTERVAL, DEFAULT_AUDIO_INTERVAL)),
+        ):
+            return
+        if now < due:
+            remaining = (due - now).total_seconds() / 3600
+            message = (
+                f"{self.entry.title} will be due for feeding in "
+                f"{human_duration(remaining)}."
+            )
+        else:
+            hours_overdue = max(0.0, (now - due).total_seconds() / 3600)
+            _, message = overdue_notification_copy(
+                self.entry.title, hours_overdue
+            )
+        spoken = False
+        for media_player in targets:
+            state = self.hass.states.get(media_player)
+            if state is None or state.state in {"unavailable", "unknown"}:
+                continue
+            await self.hass.services.async_call(
+                "tts",
+                "speak",
+                {
+                    "media_player_entity_id": media_player,
+                    "message": message,
+                    "cache": True,
+                },
+                target={"entity_id": tts_entity},
+                blocking=False,
+            )
+            spoken = True
+        if spoken:
+            data = {**self.data, "last_audio_reminder_at": now.isoformat()}
+            await self.store.save(data)
+            self.async_set_updated_data(data)
 
     def notifications_paused(self) -> bool:
         """Return whether snooze or quiet hours currently suppress reminders."""
@@ -290,6 +358,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "last_reminder_for": None,
             "last_overdue_reminder_at": None,
             "snoozed_until": None,
+            "last_audio_reminder_at": None,
         }
         await self.store.save(data)
         self._was_due = False
