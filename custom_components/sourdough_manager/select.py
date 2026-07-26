@@ -1,7 +1,7 @@
 """Storage location control."""
 from homeassistant.components.select import SelectEntity
 
-from .const import LOCATIONS, SNOOZE_OPTIONS
+from .const import LOCATION_BENCH, LOCATIONS, SNOOZE_OPTIONS
 from .entity import StarterEntity
 
 
@@ -27,6 +27,13 @@ class StorageLocationSelect(StarterEntity, SelectEntity):
     @property
     def current_option(self):
         return self.coordinator.data["location"]
+
+    @property
+    def icon(self) -> str:
+        """Return an icon matching the current storage location."""
+        if self.current_option == LOCATION_BENCH:
+            return "mdi:table-furniture"
+        return "mdi:fridge"
 
     async def async_select_option(self, option: str) -> None:
         await self.coordinator.set_location(option)
