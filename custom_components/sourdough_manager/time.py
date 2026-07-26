@@ -28,12 +28,15 @@ class LastFedTime(StarterEntity, TimeEntity):
     @property
     def native_value(self) -> time | None:
         value = parse_datetime(self.coordinator.data.get("last_fed"))
-        return dt_util.as_local(value).time() if value else None
+        if value is None:
+            return None
+        return dt_util.as_local(value).time().replace(second=0, microsecond=0)
 
     async def async_set_value(self, value: time) -> None:
         current = parse_datetime(self.coordinator.data.get("last_fed"))
         current_local = dt_util.as_local(current) if current else dt_util.now()
-        combined = datetime.combine(current_local.date(), value).replace(
+        whole_minute = value.replace(second=0, microsecond=0)
+        combined = datetime.combine(current_local.date(), whole_minute).replace(
             tzinfo=dt_util.get_default_time_zone()
         )
         await self.coordinator.record_feed(dt_util.as_utc(combined))
