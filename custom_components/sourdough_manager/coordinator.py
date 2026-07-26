@@ -1,137 +1,124 @@
 """Runtime coordinator."""
 from __future__ import annotations
 
-from dataclasses import asdict
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
-from uuid import uuid4
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    CONF_DEFAULT_FLOUR,
-    CONF_DEFAULT_FLOUR_AMOUNT,
-    CONF_DEFAULT_STARTER,
-    CONF_DEFAULT_TEMPERATURE,
-    CONF_DEFAULT_WATER,
-    CONF_STARTER_HYDRATION,
-    CONF_TEMPERATURE_ENTITY,
-    DEFAULT_FLOUR,
-    DEFAULT_FLOUR_AMOUNT,
-    DEFAULT_HYDRATION,
-    DEFAULT_STARTER,
-    DEFAULT_TEMPERATURE,
-    DEFAULT_WATER,
+    CONF_BENCH_INTERVAL,
+    CONF_DUE_SOON,
+    CONF_FRIDGE_INTERVAL,
+    CONF_LAST_FED,
+    CONF_LOCATION,
+    DEFAULT_BENCH_INTERVAL,
+    DEFAULT_DUE_SOON,
+    DEFAULT_FRIDGE_INTERVAL,
     DOMAIN,
+    EVENT_DUE_SOON,
+    EVENT_FEED_RECORDED,
+    EVENT_LOCATION_CHANGED,
+    EVENT_OVERDUE,
+    LOCATION_BENCH,
 )
-from .models import feed_ratio, predict_peak, resulting_hydration
+from .models import next_feed_due, parse_datetime, schedule_state
 from .storage import StarterStore
 
 
 class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Own state and atomic mutations for one starter."""
+    """Own scheduling state and mutations for one starter."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        super().__init__(hass, logger=__import__("logging").getLogger(__name__), name=f"{DOMAIN}_{entry.entry_id}")
+        super().__init__(
+            hass,
+            logger=__import__("logging").getLogger(__name__),
+            name=f"{DOMAIN}_{entry.entry_id}",
+            update_interval=timedelta(minutes=1),
+        )
         self.entry = entry
         self.store = StarterStore(hass, entry.entry_id)
+        self._was_due = False
+        self._was_due_soon = False
 
-    async def async_load(self) -> None:
-        data = await self.store.load()
-        data["feed_inputs"] = {
-            "starter_retained_g": self._option(CONF_DEFAULT_STARTER, DEFAULT_STARTER),
-            "water_added_g": self._option(CONF_DEFAULT_WATER, DEFAULT_WATER),
-            "flour_added_g": self._option(CONF_DEFAULT_FLOUR_AMOUNT, DEFAULT_FLOUR_AMOUNT),
-            "flour_type": self._option(CONF_DEFAULT_FLOUR, DEFAULT_FLOUR),
-            **data.get("feed_inputs", {}),
-        }
-        self.async_set_updated_data(data)
-
-    def _option(self, key: str, default: Any) -> Any:
+    def option(self, key: str, default: Any) -> Any:
         """Return an option, falling back to config data."""
         return self.entry.options.get(key, self.entry.data.get(key, default))
 
-    def temperature(self) -> float:
-        entity_id = self.entry.options.get(CONF_TEMPERATURE_ENTITY, self.entry.data.get(CONF_TEMPERATURE_ENTITY))
-        if entity_id and (state := self.hass.states.get(entity_id)):
-            try:
-                value = float(state.state)
-                if state.attributes.get("unit_of_measurement") == UnitOfTemperature.FAHRENHEIT:
-                    return round((value - 32) * 5 / 9, 1)
-                return value
-            except (TypeError, ValueError):
-                pass
-        return float(self.entry.options.get(CONF_DEFAULT_TEMPERATURE, self.entry.data.get(CONF_DEFAULT_TEMPERATURE, DEFAULT_TEMPERATURE)))
-
-    async def mutate(self, event_type: str, changes: dict[str, Any]) -> None:
-        data = {**self.data, **changes}
-        data["events"] = [*data.get("events", []), {"type": event_type, "timestamp": dt_util.utcnow().isoformat()}][-500:]
-        await self.store.save(data)
+    async def async_load(self) -> None:
+        """Load persisted data and initialise threshold state."""
+        data = await self.store.load(
+            self.entry.data.get(CONF_LOCATION, LOCATION_BENCH),
+            self.entry.data.get(CONF_LAST_FED),
+        )
         self.async_set_updated_data(data)
-        self.hass.bus.async_fire(f"{DOMAIN}_{event_type}", {"config_entry_id": self.entry.entry_id})
+        self._was_due = False
+        self._was_due_soon = False
 
-    async def record_feed(self, call: dict[str, Any]) -> None:
-        starter, water, flour = (float(call[key]) for key in ("starter_retained_g", "water_added_g", "flour_added_g"))
-        fed_at: datetime = call.get("fed_at") or dt_util.utcnow()
-        temperature = self.temperature()
-        prediction = predict_peak(starter, flour, temperature, self.data.get("location") == "refrigerator", self.data.get("feed_history", []))
-        hydration = resulting_hydration(starter, water, flour, float(self.entry.options.get(CONF_STARTER_HYDRATION, self.entry.data.get(CONF_STARTER_HYDRATION, DEFAULT_HYDRATION))))
-        cycle = {
-            "id": uuid4().hex,
-            "fed_at": fed_at.isoformat(),
-            "starter_g": starter, "water_g": water, "flour_g": flour,
-            "total_g": starter + water + flour,
-            "feed_ratio": feed_ratio(starter, water, flour),
-            "hydration_percent": hydration,
-            "flour_type": call.get("flour_type") or self.data["feed_inputs"]["flour_type"],
-            "temperature_c": temperature,
-            "notes": call.get("notes", ""),
-            "actual_peak_at": None,
-            "prediction": asdict(prediction),
-        }
-        inputs = {
-            "starter_retained_g": starter,
-            "water_added_g": water,
-            "flour_added_g": flour,
-            "flour_type": cycle["flour_type"],
-        }
-        await self.mutate(
-            "feed_recorded",
+    def next_due(self) -> datetime | None:
+        """Return the current deadline."""
+        return next_feed_due(
+            parse_datetime(self.data.get("last_fed")),
+            self.data["location"],
+            float(self.option(CONF_BENCH_INTERVAL, DEFAULT_BENCH_INTERVAL)),
+            float(self.option(CONF_FRIDGE_INTERVAL, DEFAULT_FRIDGE_INTERVAL)),
+        )
+
+    def schedule_state(self) -> tuple[bool, bool]:
+        """Return current due and due-soon states."""
+        return schedule_state(
+            self.next_due(),
+            float(self.option(CONF_DUE_SOON, DEFAULT_DUE_SOON)),
+        )
+
+    async def _async_update_data(self) -> dict[str, Any]:
+        """Refresh time-dependent entities and fire threshold events once."""
+        is_due, is_due_soon = self.schedule_state()
+        if is_due_soon and not self._was_due_soon:
+            self._fire(EVENT_DUE_SOON)
+        if is_due and not self._was_due:
+            self._fire(EVENT_OVERDUE)
+        self._was_due = is_due
+        self._was_due_soon = is_due_soon
+        return self.data
+
+    def _fire(self, event_type: str) -> None:
+        """Fire an automation-friendly event."""
+        self.hass.bus.async_fire(
+            event_type,
             {
-                "active_cycle": cycle,
-                "current_weight_g": cycle["total_g"],
-                "location": "bench",
-                "warming": False,
-                "feed_count": int(self.data.get("feed_count", 0)) + 1,
-                "feed_inputs": inputs,
+                "config_entry_id": self.entry.entry_id,
+                "last_fed": self.data.get("last_fed"),
+                "next_feed_due": self.next_due().isoformat() if self.next_due() else None,
+                "location": self.data["location"],
             },
         )
 
-    async def record_feed_from_inputs(self) -> None:
-        """Atomically record the dashboard feed inputs."""
-        await self.record_feed(dict(self.data["feed_inputs"]))
+    async def record_feed(self, fed_at: datetime | None = None) -> None:
+        """Record a feed now or retrospectively."""
+        fed_at = fed_at or dt_util.utcnow()
+        if fed_at.tzinfo is None:
+            fed_at = fed_at.replace(tzinfo=UTC)
+        data = {**self.data, "last_fed": fed_at.isoformat()}
+        await self.store.save(data)
+        self._was_due = False
+        self._was_due_soon = False
+        self.async_set_updated_data(data)
+        self._fire(EVENT_FEED_RECORDED)
 
-    async def update_feed_input(self, key: str, value: Any) -> None:
-        """Persist one dashboard feed input."""
-        inputs = {**self.data.get("feed_inputs", {}), key: value}
-        data = {**self.data, "feed_inputs": inputs}
+    async def set_location(self, location: str) -> None:
+        """Change storage location and immediately recalculate the deadline."""
+        if location == self.data["location"]:
+            return
+        data = {
+            **self.data,
+            "location": location,
+            "location_changed_at": dt_util.utcnow().isoformat(),
+        }
         await self.store.save(data)
         self.async_set_updated_data(data)
-
-    async def mark_peak(self) -> None:
-        cycle = dict(self.data.get("active_cycle") or {})
-        if not cycle:
-            return
-        now = dt_util.utcnow()
-        fed_at = dt_util.parse_datetime(cycle["fed_at"])
-        cycle["actual_peak_at"] = now.isoformat()
-        cycle["actual_peak_hours"] = round((now - fed_at).total_seconds() / 3600, 3)
-        history = [*self.data.get("feed_history", []), cycle][-250:]
-        await self.mutate("peak_marked", {"active_cycle": cycle, "feed_history": history})
-
-    async def adjust_weight(self, event: str, amount: float) -> None:
-        await self.mutate(event, {"current_weight_g": max(0, float(self.data.get("current_weight_g", 0)) - amount)})
+        self._was_due, self._was_due_soon = self.schedule_state()
+        self._fire(EVENT_LOCATION_CHANGED)
