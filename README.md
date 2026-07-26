@@ -114,7 +114,7 @@ Open **Settings → Devices & services → Sourdough Manager → Configure**.
 - **Audio targets:** one or more media players
 - **Audio reminder lead time:** when spoken reminders begin
 - **Audio reminder interval:** independent cadence for repeated announcements
-- **Light reminder targets:** colour-capable lights to flash red when due
+- **Light reminder targets:** colour-capable lights to accompany reminders
 
 Changing a frequency immediately recalculates the next deadline.
 The integration sends one early reminder, then sends an overdue reminder every
@@ -132,11 +132,18 @@ the same quiet hours and snooze state as push notifications, skip unavailable
 media players, use the escalating overdue wording and stop as soon as a feed is
 recorded.
 
-Selected reminder lights flash red three times when feeding becomes due and at
-the configured overdue reminder interval. Light reminders respect quiet hours
-and snooze. Each light's on/off state, brightness, colour mode, colour and
-effect are captured before flashing and restored afterwards. Originally-off
-lights finish off after their previous colour settings have been reapplied.
+Selected reminder lights flash red three times whenever a scheduled push or
+audio reminder is actually sent. If both types are sent during the same update,
+the lights flash only once. Light reminders respect quiet hours and snooze.
+Each light's on/off state, brightness, colour mode, colour and effect are
+captured before flashing and restored afterwards. Originally-off lights finish
+off after their previous colour settings have been reapplied.
+
+The device also provides separate **Test push reminder** and **Test audio
+reminder** buttons. Tests use the configured targets, trigger the same light
+flash and do not alter the last-fed time or reminder schedule. Test buttons run
+even during quiet hours or a snooze so the complete configuration can be
+checked immediately.
 
 ## Physical button or NFC tag
 
