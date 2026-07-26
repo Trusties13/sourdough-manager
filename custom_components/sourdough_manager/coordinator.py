@@ -18,11 +18,13 @@ from .const import (
     CONF_AUDIO_LEAD_TIME,
     CONF_AUDIO_TARGETS,
     CONF_AUDIO_TTS_ENTITY,
+    CONF_AUDIO_VOLUME,
     CONF_BENCH_INTERVAL,
     CONF_CONFIRM_FEED,
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
+    CONF_LIGHT_COLOR,
     CONF_LIGHT_TARGETS,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
@@ -32,9 +34,11 @@ from .const import (
     CONF_QUIET_START,
     DEFAULT_AUDIO_INTERVAL,
     DEFAULT_AUDIO_LEAD_TIME,
+    DEFAULT_AUDIO_VOLUME,
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
+    DEFAULT_LIGHT_COLOR,
     DEFAULT_OVERDUE_INTERVAL,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
@@ -231,16 +235,11 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             state = self.hass.states.get(media_player)
             if state is None or state.state in {"unavailable", "unknown"}:
                 continue
-            await self.hass.services.async_call(
-                "tts",
-                "speak",
-                {
-                    "media_player_entity_id": media_player,
-                    "message": message,
-                    "cache": True,
-                },
-                target={"entity_id": tts_entity},
-                blocking=False,
+            self.hass.async_create_task(
+                self._async_speak_at_configured_volume(
+                    tts_entity, media_player, message
+                ),
+                f"{DOMAIN}_audio_reminder_{media_player}",
             )
             spoken = True
         if spoken:
@@ -292,13 +291,11 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise HomeAssistantError(
                 "No notification targets are configured for this starter"
             )
+        title, message = overdue_notification_copy(self.entry.title, 1)
         await self._async_notify(
             targets,
-            (
-                f"This is a test feeding reminder for {self.entry.title}. "
-                "Your notification configuration is working."
-            ),
-            title=f"{self.entry.title} test reminder",
+            f"Test reminder. {message}",
+            title=f"TEST — {title}",
             notification_kind="test",
             actionable=False,
             record_reminder=False,
@@ -315,24 +312,19 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise HomeAssistantError(
                 "A text-to-speech provider and audio target are required"
             )
+        _, overdue_message = overdue_notification_copy(self.entry.title, 1)
         spoken = False
         for media_player in targets:
             state = self.hass.states.get(media_player)
             if state is None or state.state in {"unavailable", "unknown"}:
                 continue
-            await self.hass.services.async_call(
-                "tts",
-                "speak",
-                {
-                    "media_player_entity_id": media_player,
-                    "message": (
-                        f"This is a test feeding reminder for "
-                        f"{self.entry.title}."
-                    ),
-                    "cache": True,
-                },
-                target={"entity_id": tts_entity},
-                blocking=False,
+            self.hass.async_create_task(
+                self._async_speak_at_configured_volume(
+                    tts_entity,
+                    media_player,
+                    f"Test reminder. {overdue_message}",
+                ),
+                f"{DOMAIN}_test_audio_reminder_{media_player}",
             )
             spoken = True
         if not spoken:
@@ -341,34 +333,102 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
         await self._async_send_light_reminder(ignore_pause=True)
 
+    async def _async_speak_at_configured_volume(
+        self,
+        tts_entity: str,
+        media_player: str,
+        message: str,
+    ) -> None:
+        """Temporarily set announcement volume, speak, then restore it."""
+        state = self.hass.states.get(media_player)
+        previous_volume = (
+            state.attributes.get("volume_level") if state is not None else None
+        )
+        announcement_volume = (
+            float(
+                self.option(CONF_AUDIO_VOLUME, DEFAULT_AUDIO_VOLUME)
+            )
+            / 100
+        )
+        try:
+            await self.hass.services.async_call(
+                "media_player",
+                "volume_set",
+                {"volume_level": announcement_volume},
+                target={"entity_id": media_player},
+                blocking=True,
+            )
+            await self.hass.services.async_call(
+                "tts",
+                "speak",
+                {
+                    "media_player_entity_id": media_player,
+                    "message": message,
+                    "cache": True,
+                },
+                target={"entity_id": tts_entity},
+                blocking=False,
+            )
+            for _ in range(40):
+                current = self.hass.states.get(media_player)
+                if current is not None and current.state == "playing":
+                    break
+                await asyncio.sleep(0.25)
+            for _ in range(240):
+                current = self.hass.states.get(media_player)
+                if current is None or current.state != "playing":
+                    break
+                await asyncio.sleep(0.5)
+        finally:
+            if previous_volume is not None:
+                await self.hass.services.async_call(
+                    "media_player",
+                    "volume_set",
+                    {"volume_level": previous_volume},
+                    target={"entity_id": media_player},
+                    blocking=True,
+                )
+
     async def _async_flash_light(
         self,
         entity_id: str,
         was_on: bool,
         restore_data: dict[str, Any],
     ) -> None:
-        """Flash one light red three times and restore its prior settings."""
+        """Flash one light three times and restore its prior settings."""
+        flash_color = list(
+            self.option(CONF_LIGHT_COLOR, DEFAULT_LIGHT_COLOR)
+        )
         try:
             for _ in range(3):
                 await self.hass.services.async_call(
                     "light",
                     "turn_on",
                     {
-                        "rgb_color": [255, 0, 0],
+                        "rgb_color": flash_color,
                         "brightness": 255,
                         "transition": 0,
                     },
                     target={"entity_id": entity_id},
                     blocking=True,
                 )
-                await asyncio.sleep(0.35)
-                await self.hass.services.async_call(
-                    "light",
-                    "turn_off",
-                    {"transition": 0},
-                    target={"entity_id": entity_id},
-                    blocking=True,
-                )
+                await asyncio.sleep(1.0)
+                if was_on:
+                    await self.hass.services.async_call(
+                        "light",
+                        "turn_on",
+                        {**restore_data, "transition": 0},
+                        target={"entity_id": entity_id},
+                        blocking=True,
+                    )
+                else:
+                    await self.hass.services.async_call(
+                        "light",
+                        "turn_off",
+                        {"transition": 0},
+                        target={"entity_id": entity_id},
+                        blocking=True,
+                    )
                 await asyncio.sleep(0.25)
         finally:
             if was_on:

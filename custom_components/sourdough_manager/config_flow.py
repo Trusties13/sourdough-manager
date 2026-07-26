@@ -12,11 +12,13 @@ from .const import (
     CONF_AUDIO_LEAD_TIME,
     CONF_AUDIO_TARGETS,
     CONF_AUDIO_TTS_ENTITY,
+    CONF_AUDIO_VOLUME,
     CONF_BENCH_INTERVAL,
     CONF_CONFIRM_FEED,
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
+    CONF_LIGHT_COLOR,
     CONF_LIGHT_TARGETS,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
@@ -27,9 +29,11 @@ from .const import (
     CONF_STARTER_NAME,
     DEFAULT_AUDIO_INTERVAL,
     DEFAULT_AUDIO_LEAD_TIME,
+    DEFAULT_AUDIO_VOLUME,
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
+    DEFAULT_LIGHT_COLOR,
     DEFAULT_OVERDUE_INTERVAL,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
@@ -135,12 +139,32 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
                     CONF_AUDIO_INTERVAL, DEFAULT_AUDIO_INTERVAL
                 ),
             ): vol.All(vol.Coerce(float), vol.Range(min=5, max=1440)),
+            vol.Required(
+                CONF_AUDIO_VOLUME,
+                default=defaults.get(
+                    CONF_AUDIO_VOLUME, DEFAULT_AUDIO_VOLUME
+                ),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=10,
+                    max=100,
+                    step=5,
+                    mode=selector.NumberSelectorMode.SLIDER,
+                    unit_of_measurement="%",
+                )
+            ),
             vol.Optional(
                 CONF_LIGHT_TARGETS,
                 default=defaults.get(CONF_LIGHT_TARGETS, []),
             ): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="light", multiple=True)
             ),
+            vol.Required(
+                CONF_LIGHT_COLOR,
+                default=defaults.get(
+                    CONF_LIGHT_COLOR, DEFAULT_LIGHT_COLOR
+                ),
+            ): selector.ColorRGBSelector(),
         }
     )
     return vol.Schema(fields)
