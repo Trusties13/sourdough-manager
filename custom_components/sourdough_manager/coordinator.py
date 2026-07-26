@@ -25,6 +25,9 @@ from .const import (
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
     CONF_LIGHT_COLOR,
+    CONF_LIGHT_FLASH_COUNT,
+    CONF_LIGHT_GAP_SECONDS,
+    CONF_LIGHT_PULSE_SECONDS,
     CONF_LIGHT_TARGETS,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
@@ -39,6 +42,9 @@ from .const import (
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
     DEFAULT_LIGHT_COLOR,
+    DEFAULT_LIGHT_FLASH_COUNT,
+    DEFAULT_LIGHT_GAP_SECONDS,
+    DEFAULT_LIGHT_PULSE_SECONDS,
     DEFAULT_OVERDUE_INTERVAL,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
@@ -373,7 +379,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 current = self.hass.states.get(media_player)
                 if current is not None and current.state == "playing":
                     break
-                await asyncio.sleep(0.25)
+                await asyncio.sleep(gap_seconds)
             for _ in range(240):
                 current = self.hass.states.get(media_player)
                 if current is None or current.state != "playing":
@@ -399,8 +405,23 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         flash_color = list(
             self.option(CONF_LIGHT_COLOR, DEFAULT_LIGHT_COLOR)
         )
+        flash_count = int(
+            self.option(
+                CONF_LIGHT_FLASH_COUNT, DEFAULT_LIGHT_FLASH_COUNT
+            )
+        )
+        pulse_seconds = float(
+            self.option(
+                CONF_LIGHT_PULSE_SECONDS, DEFAULT_LIGHT_PULSE_SECONDS
+            )
+        )
+        gap_seconds = float(
+            self.option(
+                CONF_LIGHT_GAP_SECONDS, DEFAULT_LIGHT_GAP_SECONDS
+            )
+        )
         try:
-            for _ in range(3):
+            for _ in range(flash_count):
                 await self.hass.services.async_call(
                     "light",
                     "turn_on",
@@ -412,7 +433,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     target={"entity_id": entity_id},
                     blocking=True,
                 )
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(pulse_seconds)
                 if was_on:
                     await self.hass.services.async_call(
                         "light",
@@ -459,6 +480,8 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def notifications_paused(self) -> bool:
         """Return whether snooze or quiet hours currently suppress reminders."""
+        if not bool(self.data.get("reminders_enabled", True)):
+            return True
         now = dt_util.utcnow()
         snoozed_until = parse_datetime(self.data.get("snoozed_until"))
         if snoozed_until and now < snoozed_until:
@@ -592,6 +615,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._was_due_soon = False
         self.async_set_updated_data(data)
         self._fire(EVENT_FEED_RECORDED)
+        await self._async_clear_overdue_notification()
         if bool(self.option(CONF_CONFIRM_FEED, False)):
             targets = self.option(CONF_NOTIFICATION_TARGETS, [])
             if isinstance(targets, str):
@@ -606,6 +630,34 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     record_reminder=False,
                 )
         return True
+
+    async def _async_clear_overdue_notification(self) -> None:
+        """Remove this starter's tagged overdue Companion App alert."""
+        targets = self.option(CONF_NOTIFICATION_TARGETS, [])
+        if isinstance(targets, str):
+            targets = [targets]
+        tag = f"sourdough_overdue_{self.entry.entry_id}"
+        for entity_id in targets:
+            service = entity_id.partition(".")[2]
+            if not service.startswith("mobile_app_"):
+                continue
+            if not self.hass.services.has_service("notify", service):
+                continue
+            await self.hass.services.async_call(
+                "notify",
+                service,
+                {
+                    "message": "clear_notification",
+                    "data": {"tag": tag},
+                },
+                blocking=False,
+            )
+
+    async def set_reminders_enabled(self, enabled: bool) -> None:
+        """Enable or disable every scheduled reminder channel."""
+        data = {**self.data, "reminders_enabled": enabled}
+        await self.store.save(data)
+        self.async_set_updated_data(data)
 
     async def set_snooze_duration(self, hours: str) -> None:
         """Set the duration used by the snooze button and notification action."""
