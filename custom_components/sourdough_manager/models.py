@@ -147,6 +147,27 @@ def audio_reminder_due(
     )
 
 
+def light_restore_data(attributes: dict[str, Any]) -> dict[str, Any]:
+    """Extract restorable light settings from Home Assistant state attributes."""
+    data: dict[str, Any] = {}
+    if attributes.get("brightness") is not None:
+        data["brightness"] = attributes["brightness"]
+    color_mode = attributes.get("color_mode")
+    color_keys = {
+        "hs": "hs_color",
+        "xy": "xy_color",
+        "rgb": "rgb_color",
+        "rgbw": "rgbw_color",
+        "rgbww": "rgbww_color",
+        "color_temp": "color_temp_kelvin",
+    }
+    if (key := color_keys.get(color_mode)) and attributes.get(key) is not None:
+        data[key] = attributes[key]
+    if attributes.get("effect") is not None:
+        data["effect"] = attributes["effect"]
+    return data
+
+
 def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any]:
     """Reduce an older detailed store to the focused schema."""
     last_fed = old.get("last_fed")
@@ -164,4 +185,5 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         "snoozed_until": old.get("snoozed_until"),
         "snooze_hours": old.get("snooze_hours", "1"),
         "last_audio_reminder_at": old.get("last_audio_reminder_at"),
+        "last_light_reminder_at": old.get("last_light_reminder_at"),
     }
