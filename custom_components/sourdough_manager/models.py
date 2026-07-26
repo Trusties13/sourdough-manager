@@ -1,7 +1,7 @@
 """Pure scheduling calculations for Sourdough Manager."""
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 from typing import Any
 
 LOCATION_FRIDGE = "refrigerator"
@@ -70,6 +70,42 @@ def human_duration(hours: float) -> str:
     return " ".join(parts) or "Disabled"
 
 
+def parse_clock(value: str | time) -> time:
+    """Parse a stored Home Assistant time-selector value."""
+    if isinstance(value, time):
+        return value.replace(tzinfo=None)
+    return time.fromisoformat(value)
+
+
+def quiet_hours_active(
+    now: datetime,
+    enabled: bool,
+    start: str | time,
+    end: str | time,
+) -> bool:
+    """Return whether a local datetime falls inside the quiet period."""
+    if not enabled:
+        return False
+    start_time = parse_clock(start)
+    end_time = parse_clock(end)
+    current = now.time().replace(tzinfo=None)
+    if start_time == end_time:
+        return False
+    if start_time < end_time:
+        return start_time <= current < end_time
+    return current >= start_time or current < end_time
+
+
+def human_clock_range(start: str | time, end: str | time) -> str:
+    """Format quiet-hour values without exposing stored seconds."""
+    def _format(value: str | time) -> str:
+        parsed = parse_clock(value)
+        hour = parsed.hour % 12 or 12
+        return f"{hour}:{parsed.minute:02d} {'am' if parsed.hour < 12 else 'pm'}"
+
+    return f"{_format(start)} to {_format(end)}"
+
+
 def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any]:
     """Reduce an older detailed store to the focused schema."""
     last_fed = old.get("last_fed")
@@ -83,4 +119,7 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         "location_changed_at": old.get("location_changed_at"),
         "last_reminder_for": old.get("last_reminder_for"),
         "last_overdue_reminder_at": old.get("last_overdue_reminder_at"),
+        "last_reminder_sent_at": old.get("last_reminder_sent_at"),
+        "snoozed_until": old.get("snoozed_until"),
+        "snooze_hours": old.get("snooze_hours", "1"),
     }
