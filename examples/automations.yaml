@@ -19,3 +19,12 @@
       data:
         title: Sourdough starter
         message: Your starter is due to be fed.
+
+- alias: Sourdough - NFC feed log
+  triggers:
+    - trigger: tag
+      tag_id: REPLACE_WITH_YOUR_TAG_ID
+  actions:
+    - action: button.press
+      target:
+        entity_id: button.main_starter_fed_now

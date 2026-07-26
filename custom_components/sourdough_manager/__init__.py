@@ -38,6 +38,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = SourdoughCoordinator(hass, entry)
     await coordinator.async_load()
     entry.runtime_data = coordinator
+
+    async def handle_notification_action(event) -> None:
+        """Handle Companion App reminder actions for this starter."""
+        action = event.data.get("action")
+        if action == coordinator.feed_action:
+            await coordinator.record_feed(protect_duplicate=True)
+        elif action == coordinator.snooze_action:
+            await coordinator.snooze()
+
+    entry.async_on_unload(
+        hass.bus.async_listen(
+            "mobile_app_notification_action", handle_notification_action
+        )
+    )
     _remove_obsolete_entities(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_reload))

@@ -1,13 +1,18 @@
 """Storage location control."""
 from homeassistant.components.select import SelectEntity
 
-from .const import LOCATIONS
+from .const import LOCATIONS, SNOOZE_OPTIONS
 from .entity import StarterEntity
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Set up the storage location selector."""
-    async_add_entities([StorageLocationSelect(entry.runtime_data)])
+    """Set up starter selectors."""
+    async_add_entities(
+        [
+            StorageLocationSelect(entry.runtime_data),
+            SnoozeDurationSelect(entry.runtime_data),
+        ]
+    )
 
 
 class StorageLocationSelect(StarterEntity, SelectEntity):
@@ -25,3 +30,20 @@ class StorageLocationSelect(StarterEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         await self.coordinator.set_location(option)
+
+
+class SnoozeDurationSelect(StarterEntity, SelectEntity):
+    """Select how long the Snooze action pauses reminders."""
+
+    _attr_translation_key = "snooze_duration"
+    _attr_options = list(SNOOZE_OPTIONS)
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "snooze_duration")
+
+    @property
+    def current_option(self):
+        return self.coordinator.data["snooze_hours"]
+
+    async def async_select_option(self, option: str) -> None:
+        await self.coordinator.set_snooze_duration(option)

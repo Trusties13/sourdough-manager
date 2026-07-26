@@ -16,8 +16,14 @@ Each starter is represented by one Home Assistant device.
 - Configurable bench frequency, defaulting to 48 hours
 - Configurable fridge frequency, defaulting to 168 hours (7 days)
 - Configurable reminder lead time, defaulting to 12 hours
+- Configurable overdue reminder interval
+- Optional overnight quiet hours
 - One or more selectable Home Assistant notification targets
-- Repeating overdue reminders every 30 minutes until the next feed is recorded
+- Repeating overdue reminders until the next feed is recorded
+- 1, 3 or 12-hour snooze control
+- Companion App notifications with **Fed now** and **Snooze** actions
+- Optional confirmation when a feed is recorded
+- Duplicate protection for rapid physical-button presses
 - Human-friendly configuration summaries on the starter device
 - Last-fed and next-feed timestamps
 - Feed-due and feed-due-soon binary sensors
@@ -64,6 +70,12 @@ The integration creates:
 - Fridge feed frequency
 - Reminder lead time
 - Notification targets
+- Overdue reminder interval
+- Quiet hours
+- Feed confirmation
+- Last reminder sent
+- Snooze duration
+- Snooze reminders
 
 After feeding the starter, press **Fed now**. The deadline is calculated from
 the selected storage location and its configured frequency.
@@ -80,11 +92,38 @@ Open **Settings → Devices & services → Sourdough Manager → Configure**.
 - **Reminder lead time:** hours before the deadline; default 12, or 0 to
   disable the early reminder
 - **Notification targets:** one or more `notify` entities
+- **Overdue reminder interval:** minutes between reminders after feeding is due
+- **Quiet hours:** optional start and end times that suppress scheduled reminders
+- **Confirm recorded feeds:** optionally acknowledge successful feed logging
 
 Changing a frequency immediately recalculates the next deadline.
 The integration sends one early reminder, then sends an overdue reminder every
-30 minutes after the deadline until **Fed now** is pressed or **Set last fed
-date** or **Last fed time** is changed.
+configured interval after the deadline until **Fed now**, **Last fed date** or
+**Last fed time** is changed. Reminders resume after quiet hours or a snooze.
+
+Companion App targets receive **Fed now** and **Snooze** actions. Other
+notification entities receive the same reminder text without action buttons.
+
+## Physical button or NFC tag
+
+Any physical button in Home Assistant can run the starter's **Fed now** button
+through an automation. Rapid duplicate presses within 10 seconds are ignored.
+
+An NFC tag attached to the starter jar can do the same:
+
+```yaml
+alias: Sourdough - NFC feed log
+triggers:
+  - trigger: tag
+    tag_id: REPLACE_WITH_YOUR_TAG_ID
+actions:
+  - action: button.press
+    target:
+      entity_id: button.main_starter_fed_now
+```
+
+Create the tag in **Settings → Tags**, replace the example entity ID with your
+starter's **Fed now** entity, then scan the tag after feeding.
 
 ## Record an earlier feed
 

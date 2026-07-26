@@ -12,14 +12,24 @@
           "bench_interval_hours": "Bench feed frequency",
           "fridge_interval_hours": "Fridge feed frequency",
           "due_soon_hours": "Reminder lead time",
-          "notification_targets": "Notification targets"
+          "notification_targets": "Notification targets",
+          "overdue_interval_minutes": "Overdue reminder interval",
+          "quiet_hours_enabled": "Enable quiet hours",
+          "quiet_start": "Quiet hours start",
+          "quiet_end": "Quiet hours end",
+          "confirm_feed": "Confirm recorded feeds"
         },
         "data_description": {
           "last_fed": "Optional. Leave empty if the starter has not been fed yet.",
           "bench_interval_hours": "Hours between feeds while stored on the bench. Default: 48.",
           "fridge_interval_hours": "Hours between feeds while refrigerated. Default: 168.",
           "due_soon_hours": "How many hours before the deadline the first reminder is sent. Use 0 to disable the early reminder.",
-          "notification_targets": "Choose one or more notification entities. Overdue reminders repeat every 30 minutes until a feed is recorded."
+          "notification_targets": "Choose one or more notification entities.",
+          "overdue_interval_minutes": "Minutes between overdue reminders. Minimum: 5.",
+          "quiet_hours_enabled": "Suppress scheduled reminders during the configured overnight period.",
+          "quiet_start": "No scheduled reminders are sent from this time.",
+          "quiet_end": "Scheduled reminders resume at this time.",
+          "confirm_feed": "Send a confirmation to the same targets whenever a feed is recorded."
         }
       }
     }
@@ -32,13 +42,23 @@
           "bench_interval_hours": "Bench feed frequency",
           "fridge_interval_hours": "Fridge feed frequency",
           "due_soon_hours": "Reminder lead time",
-          "notification_targets": "Notification targets"
+          "notification_targets": "Notification targets",
+          "overdue_interval_minutes": "Overdue reminder interval",
+          "quiet_hours_enabled": "Enable quiet hours",
+          "quiet_start": "Quiet hours start",
+          "quiet_end": "Quiet hours end",
+          "confirm_feed": "Confirm recorded feeds"
         },
         "data_description": {
           "bench_interval_hours": "Hours between feeds while stored on the bench.",
           "fridge_interval_hours": "Hours between feeds while refrigerated.",
           "due_soon_hours": "Hours before feeding is due to send the first reminder. Use 0 to disable the early reminder.",
-          "notification_targets": "Choose one or more notification entities. Overdue reminders repeat every 30 minutes until a feed is recorded."
+          "notification_targets": "Choose one or more notification entities.",
+          "overdue_interval_minutes": "Minutes between overdue reminders. Minimum: 5.",
+          "quiet_hours_enabled": "Suppress scheduled reminders during the configured overnight period.",
+          "quiet_start": "No scheduled reminders are sent from this time.",
+          "quiet_end": "Scheduled reminders resume at this time.",
+          "confirm_feed": "Send a confirmation to the same targets whenever a feed is recorded."
         }
       }
     }
@@ -58,14 +78,19 @@
       "bench_feed_frequency": {"name": "Bench feed frequency"},
       "fridge_feed_frequency": {"name": "Fridge feed frequency"},
       "reminder_lead_time": {"name": "Reminder lead time"},
-      "notification_targets": {"name": "Notification targets"}
+      "notification_targets": {"name": "Notification targets"},
+      "overdue_reminder_interval": {"name": "Overdue reminder interval"},
+      "quiet_hours": {"name": "Quiet hours"},
+      "feed_confirmation": {"name": "Feed confirmation"},
+      "last_reminder_sent": {"name": "Last reminder sent"}
     },
     "binary_sensor": {
       "feed_due": {"name": "Feed due"},
       "feed_due_soon": {"name": "Feed due soon"}
     },
     "button": {
-      "fed_now": {"name": "Fed now"}
+      "fed_now": {"name": "Fed now"},
+      "snooze": {"name": "Snooze reminders"}
     },
     "date": {
       "last_fed_date": {"name": "Last fed date"}
@@ -79,6 +104,14 @@
         "state": {
           "bench": "Bench",
           "refrigerator": "Fridge"
+        }
+      },
+      "snooze_duration": {
+        "name": "Snooze duration",
+        "state": {
+          "1": "1 hour",
+          "3": "3 hours",
+          "12": "12 hours"
         }
       }
     }
