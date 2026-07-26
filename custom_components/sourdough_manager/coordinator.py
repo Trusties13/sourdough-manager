@@ -1,11 +1,14 @@
 """Runtime coordinator."""
 from __future__ import annotations
 
+import asyncio
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
@@ -20,6 +23,7 @@ from .const import (
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
+    CONF_LIGHT_TARGETS,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
@@ -45,6 +49,7 @@ from .const import (
 from .models import (
     audio_reminder_due,
     human_duration,
+    light_restore_data,
     next_feed_due,
     overdue_notification_copy,
     parse_datetime,
@@ -53,6 +58,9 @@ from .models import (
 )
 from .storage import StarterStore
 
+_LOGGER = logging.getLogger(__name__)
+COLOR_MODES = {"hs", "xy", "rgb", "rgbw", "rgbww"}
+
 
 class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Own scheduling state and mutations for one starter."""
@@ -60,7 +68,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         super().__init__(
             hass,
-            logger=__import__("logging").getLogger(__name__),
+            logger=_LOGGER,
             name=f"{DOMAIN}_{entry.entry_id}",
             update_interval=timedelta(minutes=1),
         )
@@ -109,6 +117,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if is_due:
             await self._async_send_overdue_reminder()
         await self._async_send_audio_reminder()
+        await self._async_send_light_reminder()
         if is_due and not self._was_due:
             self._fire(EVENT_OVERDUE)
         self._was_due = is_due
@@ -230,6 +239,107 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data = {**self.data, "last_audio_reminder_at": now.isoformat()}
             await self.store.save(data)
             self.async_set_updated_data(data)
+
+    async def _async_send_light_reminder(self) -> None:
+        """Flash configured colour lights when due, preserving prior state."""
+        if self.notifications_paused():
+            return
+        targets = self.option(CONF_LIGHT_TARGETS, [])
+        if isinstance(targets, str):
+            targets = [targets]
+        due = self.next_due()
+        if not targets or due is None:
+            return
+        now = dt_util.utcnow()
+        if not audio_reminder_due(
+            now,
+            due,
+            0,
+            parse_datetime(self.data.get("last_light_reminder_at")),
+            float(
+                self.option(
+                    CONF_OVERDUE_INTERVAL, DEFAULT_OVERDUE_INTERVAL
+                )
+            ),
+        ):
+            return
+        flashed = False
+        for light in targets:
+            state = self.hass.states.get(light)
+            if state is None or state.state in {"unavailable", "unknown"}:
+                continue
+            supported = set(state.attributes.get("supported_color_modes", []))
+            if not supported.intersection(COLOR_MODES):
+                continue
+            try:
+                await self._async_flash_light(
+                    light,
+                    state.state == "on",
+                    light_restore_data(dict(state.attributes)),
+                )
+                flashed = True
+            except HomeAssistantError:
+                _LOGGER.exception("Unable to flash reminder light %s", light)
+        if flashed:
+            data = {**self.data, "last_light_reminder_at": now.isoformat()}
+            await self.store.save(data)
+            self.async_set_updated_data(data)
+
+    async def _async_flash_light(
+        self,
+        entity_id: str,
+        was_on: bool,
+        restore_data: dict[str, Any],
+    ) -> None:
+        """Flash one light red three times and restore its prior settings."""
+        try:
+            for _ in range(3):
+                await self.hass.services.async_call(
+                    "light",
+                    "turn_on",
+                    {
+                        "rgb_color": [255, 0, 0],
+                        "brightness": 255,
+                        "transition": 0,
+                    },
+                    target={"entity_id": entity_id},
+                    blocking=True,
+                )
+                await asyncio.sleep(0.35)
+                await self.hass.services.async_call(
+                    "light",
+                    "turn_off",
+                    {"transition": 0},
+                    target={"entity_id": entity_id},
+                    blocking=True,
+                )
+                await asyncio.sleep(0.25)
+        finally:
+            if was_on:
+                await self.hass.services.async_call(
+                    "light",
+                    "turn_on",
+                    {**restore_data, "transition": 0},
+                    target={"entity_id": entity_id},
+                    blocking=True,
+                )
+            else:
+                if restore_data:
+                    await self.hass.services.async_call(
+                        "light",
+                        "turn_on",
+                        {**restore_data, "transition": 0},
+                        target={"entity_id": entity_id},
+                        blocking=True,
+                    )
+                    await asyncio.sleep(0.05)
+                await self.hass.services.async_call(
+                    "light",
+                    "turn_off",
+                    {"transition": 0},
+                    target={"entity_id": entity_id},
+                    blocking=True,
+                )
 
     def notifications_paused(self) -> bool:
         """Return whether snooze or quiet hours currently suppress reminders."""
@@ -359,6 +469,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "last_overdue_reminder_at": None,
             "snoozed_until": None,
             "last_audio_reminder_at": None,
+            "last_light_reminder_at": None,
         }
         await self.store.save(data)
         self._was_due = False
