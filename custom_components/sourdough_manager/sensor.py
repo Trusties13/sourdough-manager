@@ -10,6 +10,7 @@ from .const import (
     CONF_AUDIO_LEAD_TIME,
     CONF_AUDIO_TARGETS,
     CONF_AUDIO_TTS_ENTITY,
+    CONF_AUDIO_VOLUME,
     CONF_BENCH_INTERVAL,
     CONF_CONFIRM_FEED,
     CONF_DUE_SOON,
@@ -22,6 +23,7 @@ from .const import (
     CONF_QUIET_START,
     DEFAULT_AUDIO_INTERVAL,
     DEFAULT_AUDIO_LEAD_TIME,
+    DEFAULT_AUDIO_VOLUME,
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
@@ -72,6 +74,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
                 DEFAULT_AUDIO_LEAD_TIME,
             ),
             AudioIntervalSensor(entry.runtime_data),
+            AudioVolumeSensor(entry.runtime_data),
             LastAudioReminderSensor(entry.runtime_data),
             LightTargetsSensor(entry.runtime_data),
             LastLightReminderSensor(entry.runtime_data),
@@ -330,6 +333,25 @@ class AudioIntervalSensor(OverdueIntervalSensor):
                 )
             )
         }
+
+
+class AudioVolumeSensor(StarterEntity, SensorEntity):
+    """Configured spoken reminder volume."""
+
+    _attr_translation_key = "audio_volume"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "audio_volume")
+
+    @property
+    def native_value(self):
+        volume = float(
+            self.coordinator.option(
+                CONF_AUDIO_VOLUME, DEFAULT_AUDIO_VOLUME
+            )
+        )
+        return f"{volume:g}%"
 
 
 class LastAudioReminderSensor(StarterEntity, SensorEntity):
