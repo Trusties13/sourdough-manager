@@ -1,34 +1,21 @@
-- alias: "Sourdough: approaching peak"
-  description: Notify when the calculated state first approaches peak.
+- alias: Sourdough feed due soon
   triggers:
     - trigger: state
-      entity_id: sensor.main_starter_status
-      to: approaching_peak
+      entity_id: binary_sensor.main_starter_feed_due_soon
+      to: "on"
   actions:
     - action: notify.mobile_app_your_phone
       data:
         title: Sourdough starter
-        message: >-
-          Your starter is approaching its predicted peak.
-          Expected peak: {{ states('sensor.main_starter_expected_peak') }}.
+        message: Your starter will be due for feeding soon.
 
-- alias: "Sourdough: refrigerated feed reminder"
-  description: Remind weekly when a refrigerated starter has been left for 14 days.
+- alias: Sourdough feed overdue
   triggers:
-    - trigger: time
-      at: "09:00:00"
-  conditions:
-    - condition: time
-      weekday: [sat]
-    - condition: state
-      entity_id: sensor.main_starter_status
-      state: refrigerated
-    - condition: template
-      value_template: >-
-        {{ as_timestamp(now()) - as_timestamp(states('sensor.main_starter_last_fed'))
-           > 14 * 24 * 60 * 60 }}
+    - trigger: state
+      entity_id: binary_sensor.main_starter_feed_due
+      to: "on"
   actions:
     - action: notify.mobile_app_your_phone
       data:
         title: Sourdough starter
-        message: Your refrigerated starter is due for a maintenance feed.
+        message: Your starter is due to be fed.
