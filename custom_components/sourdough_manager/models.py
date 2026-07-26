@@ -58,6 +58,18 @@ def overdue_hours(due: datetime | None, now: datetime | None = None) -> float:
     return round(max(0.0, delta), 1)
 
 
+def human_duration(hours: float) -> str:
+    """Format an hour value as a concise human-friendly duration."""
+    total_minutes = round(hours * 60)
+    days, remaining_minutes = divmod(total_minutes, 24 * 60)
+    whole_hours, minutes = divmod(remaining_minutes, 60)
+    parts: list[str] = []
+    for value, label in ((days, "day"), (whole_hours, "hour"), (minutes, "minute")):
+        if value:
+            parts.append(f"{value} {label}{'' if value == 1 else 's'}")
+    return " ".join(parts) or "Disabled"
+
+
 def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any]:
     """Reduce an older detailed store to the focused schema."""
     last_fed = old.get("last_fed")
@@ -69,4 +81,6 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         "last_fed": last_fed,
         "location": location,
         "location_changed_at": old.get("location_changed_at"),
+        "last_reminder_for": old.get("last_reminder_for"),
+        "last_overdue_reminder_at": old.get("last_overdue_reminder_at"),
     }
