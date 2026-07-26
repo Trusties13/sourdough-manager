@@ -1,17 +1,17 @@
-# This example uses the entity prefix generated for the Kitchen / Main Starter device.
+# These IDs match this installation: original entities retain `main_starter`, while newer controls use `kitchen_main_starter`.
 type: vertical-stack
 cards:
   - type: markdown
     content: |
       ## 🫙 Main Starter
-      {% if is_state('binary_sensor.kitchen_main_starter_feed_due', 'on') %}
+      {% if is_state('binary_sensor.main_starter_feed_due', 'on') %}
         🔴 **Feeding is overdue**
-      {% elif is_state('binary_sensor.kitchen_main_starter_feed_due_soon', 'on') %}
+      {% elif is_state('binary_sensor.main_starter_feed_due_soon', 'on') %}
         🟠 **Feeding is due soon**
       {% else %}
         🟢 **Starter is on schedule**
       {% endif %}
-      {% set next_feed = states('sensor.kitchen_main_starter_next_feed_due') %}
+      {% set next_feed = states('sensor.main_starter_next_feed_due') %}
       {% if next_feed not in ['unknown', 'unavailable', 'none'] %}
 
       **Next feed:** {{ as_timestamp(next_feed) | timestamp_custom('%A, %-d %B at %-I:%M %p', true) }}
@@ -19,24 +19,24 @@ cards:
 
   - type: conditional
     conditions:
-      - entity: binary_sensor.kitchen_main_starter_feed_due
+      - entity: binary_sensor.main_starter_feed_due
         state: "on"
     card:
       type: tile
-      entity: sensor.kitchen_main_starter_next_feed_due
+      entity: sensor.main_starter_next_feed_due
       name: Feed overdue
       icon: mdi:alert-circle
       color: red
 
   - type: conditional
     conditions:
-      - entity: binary_sensor.kitchen_main_starter_feed_due
+      - entity: binary_sensor.main_starter_feed_due
         state: "off"
-      - entity: binary_sensor.kitchen_main_starter_feed_due_soon
+      - entity: binary_sensor.main_starter_feed_due_soon
         state: "on"
     card:
       type: tile
-      entity: sensor.kitchen_main_starter_next_feed_due
+      entity: sensor.main_starter_next_feed_due
       name: Feed due soon
       icon: mdi:clock-alert-outline
       color: amber
@@ -46,15 +46,15 @@ cards:
     square: false
     cards:
       - type: tile
-        entity: sensor.kitchen_main_starter_last_fed
+        entity: sensor.main_starter_last_fed
         name: Last fed
         icon: mdi:clock-check-outline
       - type: tile
-        entity: sensor.kitchen_main_starter_next_feed_due
+        entity: sensor.main_starter_next_feed_due
         name: Next feed
         icon: mdi:calendar-clock
       - type: tile
-        entity: select.kitchen_main_starter_storage_location
+        entity: select.main_starter_storage_location
         name: Storage
       - type: tile
         entity: switch.kitchen_main_starter_reminders
@@ -66,7 +66,7 @@ cards:
     square: false
     cards:
       - type: button
-        entity: button.kitchen_main_starter_fed_now
+        entity: button.main_starter_fed_now
         name: Fed now
         icon: mdi:check-circle
         show_state: false
@@ -74,7 +74,7 @@ cards:
           action: call-service
           service: button.press
           target:
-            entity_id: button.kitchen_main_starter_fed_now
+            entity_id: button.main_starter_fed_now
       - type: button
         entity: button.kitchen_main_starter_snooze_reminders
         name: Snooze
