@@ -5,47 +5,65 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 
-from .const import DOMAIN, PLATFORMS
+from .const import DOMAIN, OBSOLETE_ENTITY_KEYS, PLATFORMS
 from .coordinator import SourdoughCoordinator
 
-SERVICE_SCHEMAS = {
-    "record_feed": vol.Schema({
+SERVICE_SCHEMA = vol.Schema(
+    {
         vol.Required("config_entry_id"): cv.string,
-        vol.Required("starter_retained_g"): vol.All(vol.Coerce(float), vol.Range(min=0.1)),
-        vol.Required("water_added_g"): vol.All(vol.Coerce(float), vol.Range(min=0)),
-        vol.Required("flour_added_g"): vol.All(vol.Coerce(float), vol.Range(min=0.1)),
-        vol.Optional("flour_type", default="bread_flour"): cv.string,
         vol.Optional("fed_at"): cv.datetime,
-        vol.Optional("notes", default=""): cv.string,
-    }),
-    "record_discard": vol.Schema({vol.Required("config_entry_id"): cv.string, vol.Required("amount_g"): vol.All(vol.Coerce(float), vol.Range(min=0.1))}),
-    "record_use": vol.Schema({vol.Required("config_entry_id"): cv.string, vol.Required("amount_g"): vol.All(vol.Coerce(float), vol.Range(min=0.1))}),
-}
+    }
+)
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    async def handler(call: ServiceCall) -> None:
+    """Register the retrospective feed action."""
+
+    async def record_feed(call: ServiceCall) -> None:
         entry = hass.config_entries.async_get_entry(call.data["config_entry_id"])
         if entry is None or entry.domain != DOMAIN or entry.runtime_data is None:
             raise ValueError("Unknown Sourdough Manager config entry")
-        if call.service == "record_feed":
-            await entry.runtime_data.record_feed(dict(call.data))
-        else:
-            await entry.runtime_data.adjust_weight(call.service, float(call.data["amount_g"]))
+        await entry.runtime_data.record_feed(call.data.get("fed_at"))
 
-    for service, schema in SERVICE_SCHEMAS.items():
-        hass.services.async_register(DOMAIN, service, handler, schema=schema)
+    hass.services.async_register(
+        DOMAIN, "record_feed", record_feed, schema=SERVICE_SCHEMA
+    )
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up one starter."""
     coordinator = SourdoughCoordinator(hass, entry)
     await coordinator.async_load()
     entry.runtime_data = coordinator
+    _remove_obsolete_entities(hass, entry)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_reload))
     return True
+
+
+def _remove_obsolete_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remove entities retired by the focused tracker redesign."""
+    registry = er.async_get(hass)
+    for key in OBSOLETE_ENTITY_KEYS:
+        if entity_id := registry.async_get_entity_id(
+            "sensor", DOMAIN, f"{entry.entry_id}_{key}"
+        ):
+            registry.async_remove(entity_id)
+        if entity_id := registry.async_get_entity_id(
+            "button", DOMAIN, f"{entry.entry_id}_{key}"
+        ):
+            registry.async_remove(entity_id)
+        if entity_id := registry.async_get_entity_id(
+            "number", DOMAIN, f"{entry.entry_id}_{key}"
+        ):
+            registry.async_remove(entity_id)
+        if entity_id := registry.async_get_entity_id(
+            "select", DOMAIN, f"{entry.entry_id}_{key}"
+        ):
+            registry.async_remove(entity_id)
 
 
 async def _reload(hass: HomeAssistant, entry: ConfigEntry) -> None:
