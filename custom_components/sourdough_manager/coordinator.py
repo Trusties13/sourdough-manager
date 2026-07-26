@@ -38,6 +38,7 @@ from .const import (
 from .models import (
     human_duration,
     next_feed_due,
+    overdue_notification_copy,
     parse_datetime,
     quiet_hours_active,
     schedule_state,
@@ -127,6 +128,8 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 f"{self.entry.title} is due to be fed at "
                 f"{dt_util.as_local(due).strftime('%-I:%M %p on %A, %-d %B')}."
             ),
+            title=f"{self.entry.title} feeding due soon",
+            notification_kind="due_soon",
         )
 
     async def _async_send_overdue_reminder(self) -> None:
@@ -149,9 +152,15 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         data = {**self.data, "last_overdue_reminder_at": now.isoformat()}
         await self.store.save(data)
         self.async_set_updated_data(data)
+        hours_overdue = max(0.0, (now - due).total_seconds() / 3600)
+        title, message = overdue_notification_copy(
+            self.entry.title, hours_overdue
+        )
         await self._async_notify(
             targets,
-            f"{self.entry.title} is overdue for feeding. Feed it when you can.",
+            message,
+            title=title,
+            notification_kind="overdue",
         )
 
     def notifications_paused(self) -> bool:
@@ -172,6 +181,8 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         targets: list[str],
         message: str,
         *,
+        title: str,
+        notification_kind: str,
         actionable: bool = True,
         record_reminder: bool = True,
     ) -> None:
@@ -200,14 +211,16 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ]
         for service in mobile_targets:
             payload: dict[str, Any] = {
-                "title": "Sourdough feeding reminder",
+                "title": title,
                 "message": message,
+                "data": {
+                    "tag": (
+                        f"sourdough_{notification_kind}_{self.entry.entry_id}"
+                    )
+                },
             }
             if actions:
-                payload["data"] = {
-                    "actions": actions,
-                    "tag": f"sourdough_reminder_{self.entry.entry_id}",
-                }
+                payload["data"]["actions"] = actions
             await self.hass.services.async_call(
                 "notify", service, payload, blocking=False
             )
@@ -216,7 +229,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "notify",
                 "send_message",
                 {
-                    "title": "Sourdough feeding reminder",
+                    "title": title,
                     "message": message,
                 },
                 target={"entity_id": generic_targets},
@@ -291,6 +304,8 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await self._async_notify(
                     targets,
                     f"{self.entry.title} was recorded as fed.",
+                    title=f"{self.entry.title} feed recorded",
+                    notification_kind="confirmation",
                     actionable=False,
                     record_reminder=False,
                 )
