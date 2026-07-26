@@ -33,7 +33,8 @@ class LastFedDate(StarterEntity, DateEntity):
     async def async_set_value(self, value: date) -> None:
         current = parse_datetime(self.coordinator.data.get("last_fed"))
         current_local = dt_util.as_local(current) if current else dt_util.now()
-        combined = datetime.combine(value, current_local.time()).replace(
+        whole_minute = current_local.time().replace(second=0, microsecond=0)
+        combined = datetime.combine(value, whole_minute).replace(
             tzinfo=dt_util.get_default_time_zone()
         )
         await self.coordinator.record_feed(dt_util.as_utc(combined))
