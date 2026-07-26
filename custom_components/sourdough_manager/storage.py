@@ -29,6 +29,9 @@ class StarterStore:
                 "location_changed_at": None,
                 "last_reminder_for": None,
                 "last_overdue_reminder_at": None,
+                "last_reminder_sent_at": None,
+                "snoozed_until": None,
+                "snooze_hours": "1",
             }
         else:
             data = migrate_storage(stored, default_location)
