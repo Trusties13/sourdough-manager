@@ -23,6 +23,7 @@
           "audio_targets": "Audio targets",
           "audio_lead_time_hours": "Audio reminder lead time",
           "audio_interval_minutes": "Audio reminder interval",
+          "audio_volume_percent": "Audio announcement volume",
           "light_targets": "Light reminder targets"
         },
         "data_description": {
@@ -41,6 +42,7 @@
           "audio_targets": "Select one or more media players. Unavailable players are skipped.",
           "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
           "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze.",
+          "audio_volume_percent": "Temporary volume used for spoken reminders. The previous player volume is restored after the announcement.",
           "light_targets": "Select colour-capable lights to flash red three times whenever a push or audio feeding reminder is sent."
         }
       }
@@ -65,6 +67,7 @@
           "audio_targets": "Audio targets",
           "audio_lead_time_hours": "Audio reminder lead time",
           "audio_interval_minutes": "Audio reminder interval",
+          "audio_volume_percent": "Audio announcement volume",
           "light_targets": "Light reminder targets"
         },
         "data_description": {
@@ -82,6 +85,7 @@
           "audio_targets": "Select one or more media players. Unavailable players are skipped.",
           "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
           "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze.",
+          "audio_volume_percent": "Temporary volume used for spoken reminders. The previous player volume is restored after the announcement.",
           "light_targets": "Select colour-capable lights to flash red three times whenever a push or audio feeding reminder is sent."
         }
       }
@@ -150,6 +154,9 @@
       },
       "last_light_reminder": {
         "name": "Last light reminder"
+      },
+      "audio_volume": {
+        "name": "Audio announcement volume"
       }
     },
     "binary_sensor": {
