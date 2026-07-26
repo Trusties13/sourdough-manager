@@ -111,6 +111,22 @@ def test_audio_reminder_has_independent_lead_time_and_interval():
     )
 
 
+def test_light_restore_data_uses_original_mode_and_brightness():
+    assert models.light_restore_data(
+        {
+            "brightness": 120,
+            "color_mode": "hs",
+            "hs_color": (30.0, 70.0),
+            "rgb_color": (255, 127, 76),
+            "effect": "none",
+        }
+    ) == {
+        "brightness": 120,
+        "hs_color": (30.0, 70.0),
+        "effect": "none",
+    }
+
+
 def test_migrates_existing_active_cycle_and_location():
     migrated = models.migrate_storage(
         {
@@ -131,4 +147,5 @@ def test_migrates_existing_active_cycle_and_location():
         "snoozed_until": None,
         "snooze_hours": "1",
         "last_audio_reminder_at": None,
+        "last_light_reminder_at": None,
     }
