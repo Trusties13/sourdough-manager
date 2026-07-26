@@ -1,34 +1,21 @@
-"""Action buttons."""
-from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
+"""Feeding action button."""
+from homeassistant.components.button import ButtonEntity
 
 from .entity import StarterEntity
 
-BUTTONS = (
-    ButtonEntityDescription(key="record_feed", translation_key="record_feed"),
-    ButtonEntityDescription(key="mark_peak", translation_key="mark_peak"),
-    ButtonEntityDescription(key="refrigerate", translation_key="refrigerate"),
-    ButtonEntityDescription(key="remove_from_fridge", translation_key="remove_from_fridge"),
-    ButtonEntityDescription(key="cancel_cycle", translation_key="cancel_cycle"),
-)
-
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    async_add_entities(StarterButton(entry.runtime_data, description) for description in BUTTONS)
+    """Set up the Fed now button."""
+    async_add_entities([FedNowButton(entry.runtime_data)])
 
 
-class StarterButton(StarterEntity, ButtonEntity):
-    def __init__(self, coordinator, description):
-        super().__init__(coordinator, description.key)
-        self.entity_description = description
+class FedNowButton(StarterEntity, ButtonEntity):
+    """Record a feeding at the current time."""
+
+    _attr_translation_key = "fed_now"
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "fed_now")
 
     async def async_press(self):
-        if self.entity_description.key == "record_feed":
-            await self.coordinator.record_feed_from_inputs()
-        elif self.entity_description.key == "mark_peak":
-            await self.coordinator.mark_peak()
-        elif self.entity_description.key == "refrigerate":
-            await self.coordinator.mutate("refrigerated", {"location": "refrigerator", "warming": False})
-        elif self.entity_description.key == "remove_from_fridge":
-            await self.coordinator.mutate("removed_from_fridge", {"location": "bench", "warming": True})
-        else:
-            await self.coordinator.mutate("cycle_cancelled", {"active_cycle": None})
+        await self.coordinator.record_feed()
