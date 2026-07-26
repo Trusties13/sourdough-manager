@@ -16,6 +16,9 @@ from .const import (
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_LIGHT_COLOR,
+    CONF_LIGHT_FLASH_COUNT,
+    CONF_LIGHT_GAP_SECONDS,
+    CONF_LIGHT_PULSE_SECONDS,
     CONF_LIGHT_TARGETS,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
@@ -29,6 +32,9 @@ from .const import (
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
     DEFAULT_LIGHT_COLOR,
+    DEFAULT_LIGHT_FLASH_COUNT,
+    DEFAULT_LIGHT_GAP_SECONDS,
+    DEFAULT_LIGHT_PULSE_SECONDS,
     DEFAULT_OVERDUE_INTERVAL,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
@@ -80,6 +86,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             LastAudioReminderSensor(entry.runtime_data),
             LightTargetsSensor(entry.runtime_data),
             LightColorSensor(entry.runtime_data),
+            LightTimingSensor(entry.runtime_data),
             LastLightReminderSensor(entry.runtime_data),
         ]
     )
@@ -431,3 +438,32 @@ class LightColorSensor(StarterEntity, SensorEntity):
             CONF_LIGHT_COLOR, DEFAULT_LIGHT_COLOR
         )
         return f"RGB {red}, {green}, {blue}"
+
+
+class LightTimingSensor(StarterEntity, SensorEntity):
+    """Configured light reminder timing."""
+
+    _attr_translation_key = "light_timing"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "light_timing")
+
+    @property
+    def native_value(self):
+        count = int(
+            self.coordinator.option(
+                CONF_LIGHT_FLASH_COUNT, DEFAULT_LIGHT_FLASH_COUNT
+            )
+        )
+        pulse = float(
+            self.coordinator.option(
+                CONF_LIGHT_PULSE_SECONDS, DEFAULT_LIGHT_PULSE_SECONDS
+            )
+        )
+        gap = float(
+            self.coordinator.option(
+                CONF_LIGHT_GAP_SECONDS, DEFAULT_LIGHT_GAP_SECONDS
+            )
+        )
+        return f"{count} × {pulse:g}s, {gap:g}s gap"
