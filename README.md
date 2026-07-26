@@ -136,7 +136,8 @@ recorded. Before each announcement, the player's existing volume is captured
 and the configured announcement volume is applied. The previous volume is
 restored after playback finishes.
 
-Selected reminder lights flash in the configured colour three times whenever a scheduled push or
+Selected reminder lights flash in the configured colour three times, with each
+colour pulse lasting one second, whenever a scheduled push or
 audio reminder is actually sent. If both types are sent during the same update,
 the lights flash only once. Light reminders respect quiet hours and snooze.
 Each light's on/off state, brightness, colour mode, colour and effect are
