@@ -379,7 +379,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 current = self.hass.states.get(media_player)
                 if current is not None and current.state == "playing":
                     break
-                await asyncio.sleep(gap_seconds)
+                await asyncio.sleep(0.25)
             for _ in range(240):
                 current = self.hass.states.get(media_player)
                 if current is None or current.state != "playing":
@@ -450,7 +450,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         target={"entity_id": entity_id},
                         blocking=True,
                     )
-                await asyncio.sleep(0.25)
+                await asyncio.sleep(gap_seconds)
         finally:
             if was_on:
                 await self.hass.services.async_call(
