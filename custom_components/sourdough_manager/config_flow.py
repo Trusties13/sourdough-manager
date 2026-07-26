@@ -8,20 +8,36 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_BENCH_INTERVAL,
+    CONF_CONFIRM_FEED,
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
+    CONF_OVERDUE_INTERVAL,
+    CONF_QUIET_END,
+    CONF_QUIET_HOURS_ENABLED,
+    CONF_QUIET_START,
     CONF_STARTER_NAME,
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
+    DEFAULT_OVERDUE_INTERVAL,
+    DEFAULT_QUIET_END,
+    DEFAULT_QUIET_START,
     DOMAIN,
     LOCATIONS,
 )
 
 INTERVAL_SCHEMA = vol.All(vol.Coerce(float), vol.Range(min=1, max=2160))
+
+
+def _serialise_times(data: dict) -> dict:
+    """Convert selector time objects to config-entry-safe strings."""
+    for key in (CONF_QUIET_START, CONF_QUIET_END):
+        if hasattr(data.get(key), "isoformat"):
+            data[key] = data[key].isoformat()
+    return data
 
 
 def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
@@ -56,6 +72,28 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
             ): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="notify", multiple=True)
             ),
+            vol.Required(
+                CONF_OVERDUE_INTERVAL,
+                default=defaults.get(
+                    CONF_OVERDUE_INTERVAL, DEFAULT_OVERDUE_INTERVAL
+                ),
+            ): vol.All(vol.Coerce(float), vol.Range(min=5, max=1440)),
+            vol.Required(
+                CONF_QUIET_HOURS_ENABLED,
+                default=defaults.get(CONF_QUIET_HOURS_ENABLED, False),
+            ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_QUIET_START,
+                default=defaults.get(CONF_QUIET_START, DEFAULT_QUIET_START),
+            ): selector.TimeSelector(),
+            vol.Required(
+                CONF_QUIET_END,
+                default=defaults.get(CONF_QUIET_END, DEFAULT_QUIET_END),
+            ): selector.TimeSelector(),
+            vol.Required(
+                CONF_CONFIRM_FEED,
+                default=defaults.get(CONF_CONFIRM_FEED, False),
+            ): selector.BooleanSelector(),
         }
     )
     return vol.Schema(fields)
@@ -73,6 +111,7 @@ class SourdoughConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         last_fed = user_input.get(CONF_LAST_FED)
         if hasattr(last_fed, "isoformat"):
             user_input[CONF_LAST_FED] = last_fed.isoformat()
+        _serialise_times(user_input)
         return self.async_create_entry(
             title=name, data={CONF_STARTER_NAME: name, **user_input}
         )
@@ -87,7 +126,7 @@ class SourdoughOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         if user_input is not None:
-            return self.async_create_entry(data=user_input)
+            return self.async_create_entry(data=_serialise_times(user_input))
         defaults = {**self.config_entry.data, **self.config_entry.options}
         return self.async_show_form(
             step_id="init", data_schema=_schema(defaults, False)
