@@ -4,19 +4,20 @@
     "step": {
       "user": {
         "title": "Add a sourdough starter",
-        "description": "Create a device and entities for this starter.",
+        "description": "Track when this starter was fed and when it is due again.",
         "data": {
           "name": "Starter name",
-          "starter_hydration": "Starter hydration",
-          "default_flour": "Default flour",
-          "default_starter_retained_g": "Default starter retained",
-          "default_water_added_g": "Default water added",
-          "default_flour_added_g": "Default flour added",
-          "vessel_tare_g": "Empty jar weight",
-          "programme": "Starter programme",
-          "temperature_entity": "Temperature sensor",
-          "default_temperature": "Fallback temperature",
-          "refrigerated_reminder_days": "Refrigerated feed reminder"
+          "location": "Storage location",
+          "last_fed": "Last fed",
+          "bench_interval_hours": "Bench feed frequency",
+          "fridge_interval_hours": "Fridge feed frequency",
+          "due_soon_hours": "Due-soon warning"
+        },
+        "data_description": {
+          "last_fed": "Optional. Leave empty if the starter has not been fed yet.",
+          "bench_interval_hours": "Hours between feeds while stored on the bench. Default: 48.",
+          "fridge_interval_hours": "Hours between feeds while refrigerated. Default: 168.",
+          "due_soon_hours": "How many hours before the deadline the due-soon sensor turns on. Use 0 to disable."
         }
       }
     }
@@ -24,72 +25,46 @@
   "options": {
     "step": {
       "init": {
-        "title": "Starter options",
+        "title": "Feeding frequencies",
         "data": {
-          "starter_hydration": "Starter hydration",
-          "default_flour": "Default flour",
-          "default_starter_retained_g": "Default starter retained",
-          "default_water_added_g": "Default water added",
-          "default_flour_added_g": "Default flour added",
-          "vessel_tare_g": "Empty jar weight",
-          "programme": "Starter programme",
-          "temperature_entity": "Temperature sensor",
-          "default_temperature": "Fallback temperature",
-          "refrigerated_reminder_days": "Refrigerated feed reminder"
+          "bench_interval_hours": "Bench feed frequency",
+          "fridge_interval_hours": "Fridge feed frequency",
+          "due_soon_hours": "Due-soon warning"
+        },
+        "data_description": {
+          "bench_interval_hours": "Hours between feeds while stored on the bench.",
+          "fridge_interval_hours": "Hours between feeds while refrigerated.",
+          "due_soon_hours": "Hours of advance warning. Use 0 to disable."
         }
       }
     }
   },
   "selector": {
-    "flour": {
+    "location": {
       "options": {
-        "bread_flour": "Bread flour", "plain_flour": "Plain flour",
-        "wholemeal_wheat": "Wholemeal wheat", "rye": "Rye", "spelt": "Spelt",
-        "custom_blend": "Custom blend", "other": "Other"
-      }
-    },
-    "programme": {
-      "options": {
-        "mature": "Mature starter",
-        "new_starter": "New starter programme",
-        "refrigerated": "Refrigerated maintenance"
+        "bench": "Bench",
+        "refrigerator": "Fridge"
       }
     }
   },
   "entity": {
     "sensor": {
-      "status": {"name": "Status"}, "last_fed": {"name": "Last fed"},
-      "expected_peak": {"name": "Expected peak"}, "peak_window_start": {"name": "Peak window start"},
-      "peak_window_end": {"name": "Peak window end"}, "current_weight": {"name": "Current weight"},
-      "feed_ratio": {"name": "Feed ratio"}, "hydration": {"name": "Hydration"},
-      "cycle_progress": {"name": "Cycle progress"}, "prediction_confidence": {"name": "Prediction confidence"},
-      "average_temperature": {"name": "Temperature at feed"}, "last_peak_duration": {"name": "Last peak duration"},
-      "total_weight_with_vessel": {"name": "Total weight with jar"},
-      "suggested_discard": {"name": "Suggested discard"},
-      "suggested_water": {"name": "Suggested water"},
-      "suggested_flour": {"name": "Suggested flour"},
-      "next_feed_due": {"name": "Next feed due"},
-      "feeding_count": {"name": "Total feedings"},
-      "programme_day": {"name": "Programme day"},
-      "programme_phase": {"name": "Programme phase"},
-      "instructions": {"name": "Next feeding instructions"}
+      "last_fed": {"name": "Last fed"},
+      "next_feed_due": {"name": "Next feed due"}
+    },
+    "binary_sensor": {
+      "feed_due": {"name": "Feed due"},
+      "feed_due_soon": {"name": "Feed due soon"}
     },
     "button": {
-      "record_feed": {"name": "Record feed"}, "mark_peak": {"name": "Mark peak"}, "refrigerate": {"name": "Refrigerate"},
-      "remove_from_fridge": {"name": "Remove from fridge"}, "cancel_cycle": {"name": "Cancel cycle"}
-    },
-    "number": {
-      "starter_retained": {"name": "Starter retained"},
-      "water_added": {"name": "Water added"},
-      "flour_added": {"name": "Flour added"}
+      "fed_now": {"name": "Fed now"}
     },
     "select": {
-      "feed_flour_type": {
-        "name": "Feed flour type",
+      "storage_location": {
+        "name": "Storage location",
         "state": {
-          "bread_flour": "Bread flour", "plain_flour": "Plain flour",
-          "wholemeal_wheat": "Wholemeal wheat", "rye": "Rye", "spelt": "Spelt",
-          "custom_blend": "Custom blend", "other": "Other"
+          "bench": "Bench",
+          "refrigerator": "Fridge"
         }
       }
     }
