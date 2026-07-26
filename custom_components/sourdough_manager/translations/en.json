@@ -22,7 +22,8 @@
           "audio_tts_entity": "Text-to-speech provider",
           "audio_targets": "Audio targets",
           "audio_lead_time_hours": "Audio reminder lead time",
-          "audio_interval_minutes": "Audio reminder interval"
+          "audio_interval_minutes": "Audio reminder interval",
+          "light_targets": "Light reminder targets"
         },
         "data_description": {
           "last_fed": "Optional. Leave empty if the starter has not been fed yet.",
@@ -39,7 +40,8 @@
           "audio_tts_entity": "Select the voice or text-to-speech provider used for announcements.",
           "audio_targets": "Select one or more media players. Unavailable players are skipped.",
           "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
-          "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze."
+          "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze.",
+          "light_targets": "Select colour-capable lights to flash red three times when due and at each overdue interval."
         }
       }
     }
@@ -62,7 +64,8 @@
           "audio_tts_entity": "Text-to-speech provider",
           "audio_targets": "Audio targets",
           "audio_lead_time_hours": "Audio reminder lead time",
-          "audio_interval_minutes": "Audio reminder interval"
+          "audio_interval_minutes": "Audio reminder interval",
+          "light_targets": "Light reminder targets"
         },
         "data_description": {
           "bench_interval_hours": "Hours between feeds while stored on the bench.",
@@ -78,7 +81,8 @@
           "audio_tts_entity": "Select the voice or text-to-speech provider used for announcements.",
           "audio_targets": "Select one or more media players. Unavailable players are skipped.",
           "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
-          "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze."
+          "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze.",
+          "light_targets": "Select colour-capable lights to flash red three times when due and at each overdue interval."
         }
       }
     }
@@ -108,7 +112,9 @@
       "audio_targets": {"name": "Audio targets"},
       "audio_lead_time": {"name": "Audio reminder lead time"},
       "audio_reminder_interval": {"name": "Audio reminder interval"},
-      "last_audio_reminder": {"name": "Last audio reminder"}
+      "last_audio_reminder": {"name": "Last audio reminder"},
+      "light_targets": {"name": "Light reminder targets"},
+      "last_light_reminder": {"name": "Last light reminder"}
     },
     "binary_sensor": {
       "feed_due": {"name": "Feed due"},
