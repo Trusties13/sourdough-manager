@@ -16,6 +16,7 @@ from .const import (
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_LIGHT_TARGETS,
+    CONF_LIGHT_COLOR,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
     CONF_QUIET_END,
@@ -27,6 +28,7 @@ from .const import (
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
+    DEFAULT_LIGHT_COLOR,
     DEFAULT_OVERDUE_INTERVAL,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
@@ -77,6 +79,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             AudioVolumeSensor(entry.runtime_data),
             LastAudioReminderSensor(entry.runtime_data),
             LightTargetsSensor(entry.runtime_data),
+            LightColorSensor(entry.runtime_data),
             LastLightReminderSensor(entry.runtime_data),
         ]
     )
@@ -411,3 +414,20 @@ class LastLightReminderSensor(StarterEntity, SensorEntity):
         return parse_datetime(
             self.coordinator.data.get("last_light_reminder_at")
         )
+
+
+class LightColorSensor(StarterEntity, SensorEntity):
+    """Configured visual reminder colour."""
+
+    _attr_translation_key = "light_color"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "light_color")
+
+    @property
+    def native_value(self):
+        red, green, blue = self.coordinator.option(
+            CONF_LIGHT_COLOR, DEFAULT_LIGHT_COLOR
+        )
+        return f"RGB {red}, {green}, {blue}"
