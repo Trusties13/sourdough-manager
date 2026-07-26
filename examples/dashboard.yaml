@@ -1,9 +1,105 @@
-type: entities
-title: Main Starter
-entities:
-  - select.main_starter_storage_location
-  - sensor.main_starter_last_fed
-  - sensor.main_starter_next_feed_due
-  - binary_sensor.main_starter_feed_due_soon
-  - binary_sensor.main_starter_feed_due
-  - button.main_starter_fed_now
+# Replace `main_starter` if Home Assistant generated a different entity prefix.
+type: vertical-stack
+cards:
+  - type: markdown
+    content: |
+      ## 🫙 Main Starter
+      {% if is_state('binary_sensor.main_starter_feed_due', 'on') %}
+        🔴 **Feeding is overdue**
+      {% elif is_state('binary_sensor.main_starter_feed_due_soon', 'on') %}
+        🟠 **Feeding is due soon**
+      {% else %}
+        🟢 **Starter is on schedule**
+      {% endif %}
+
+  - type: conditional
+    conditions:
+      - entity: binary_sensor.main_starter_feed_due
+        state: "on"
+    card:
+      type: tile
+      entity: sensor.main_starter_next_feed_due
+      name: Feed overdue
+      icon: mdi:alert-circle
+      color: red
+
+  - type: conditional
+    conditions:
+      - entity: binary_sensor.main_starter_feed_due
+        state: "off"
+      - entity: binary_sensor.main_starter_feed_due_soon
+        state: "on"
+    card:
+      type: tile
+      entity: sensor.main_starter_next_feed_due
+      name: Feed due soon
+      icon: mdi:clock-alert-outline
+      color: amber
+
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: tile
+        entity: sensor.main_starter_last_fed
+        name: Last fed
+        icon: mdi:clock-check-outline
+      - type: tile
+        entity: sensor.main_starter_next_feed_due
+        name: Next feed
+        icon: mdi:calendar-clock
+      - type: tile
+        entity: select.main_starter_storage_location
+        name: Storage
+        icon: mdi:fridge-outline
+      - type: tile
+        entity: switch.main_starter_reminders
+        name: Reminders
+        icon: mdi:bell-ring-outline
+
+  - type: grid
+    columns: 2
+    square: false
+    cards:
+      - type: button
+        entity: button.main_starter_fed_now
+        name: Fed now
+        icon: mdi:check-circle
+        show_state: false
+        tap_action:
+          action: call-service
+          service: button.press
+          target:
+            entity_id: button.main_starter_fed_now
+      - type: button
+        entity: button.main_starter_snooze
+        name: Snooze
+        icon: mdi:bell-sleep
+        show_state: false
+        tap_action:
+          action: call-service
+          service: button.press
+          target:
+            entity_id: button.main_starter_snooze
+
+  - type: entities
+    title: Reminder controls
+    show_header_toggle: false
+    entities:
+      - entity: switch.main_starter_reminders
+        name: Scheduled reminders
+      - entity: select.main_starter_snooze_duration
+        name: Snooze duration
+      - entity: button.main_starter_test_push_reminder
+        name: Test push and light
+      - entity: button.main_starter_test_audio_reminder
+        name: Test audio and light
+
+  - type: entities
+    title: Correct a late entry
+    show_header_toggle: false
+    entities:
+      - entity: date.main_starter_last_fed_date
+        name: Last fed date
+      - entity: time.main_starter_last_fed_time
+        name: Last fed time
