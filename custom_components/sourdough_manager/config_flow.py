@@ -20,9 +20,7 @@ from .const import (
     LOCATIONS,
 )
 
-
-def _interval(value: float) -> float:
-    return vol.All(vol.Coerce(float), vol.Range(min=1, max=2160))(value)
+INTERVAL_SCHEMA = vol.All(vol.Coerce(float), vol.Range(min=1, max=2160))
 
 
 def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
@@ -42,11 +40,11 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
             vol.Required(
                 CONF_BENCH_INTERVAL,
                 default=defaults.get(CONF_BENCH_INTERVAL, DEFAULT_BENCH_INTERVAL),
-            ): _interval,
+            ): INTERVAL_SCHEMA,
             vol.Required(
                 CONF_FRIDGE_INTERVAL,
                 default=defaults.get(CONF_FRIDGE_INTERVAL, DEFAULT_FRIDGE_INTERVAL),
-            ): _interval,
+            ): INTERVAL_SCHEMA,
             vol.Required(
                 CONF_DUE_SOON,
                 default=defaults.get(CONF_DUE_SOON, DEFAULT_DUE_SOON),
