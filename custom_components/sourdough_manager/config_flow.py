@@ -12,6 +12,7 @@ from .const import (
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
     CONF_LOCATION,
+    CONF_NOTIFICATION_TARGETS,
     CONF_STARTER_NAME,
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
@@ -49,6 +50,12 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
                 CONF_DUE_SOON,
                 default=defaults.get(CONF_DUE_SOON, DEFAULT_DUE_SOON),
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=168)),
+            vol.Optional(
+                CONF_NOTIFICATION_TARGETS,
+                default=defaults.get(CONF_NOTIFICATION_TARGETS, []),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="notify", multiple=True)
+            ),
         }
     )
     return vol.Schema(fields)
