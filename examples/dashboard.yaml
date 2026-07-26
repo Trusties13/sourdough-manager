@@ -11,6 +11,11 @@ cards:
       {% else %}
         🟢 **Starter is on schedule**
       {% endif %}
+      {% set next_feed = states('sensor.main_starter_next_feed_due') %}
+      {% if next_feed not in ['unknown', 'unavailable', 'none'] %}
+
+      **Next feed:** {{ as_timestamp(next_feed) | timestamp_custom('%A, %-d %B at %-I:%M %p', true) }}
+      {% endif %}
 
   - type: conditional
     conditions:
@@ -51,7 +56,6 @@ cards:
       - type: tile
         entity: select.main_starter_storage_location
         name: Storage
-        icon: mdi:fridge-outline
       - type: tile
         entity: switch.main_starter_reminders
         name: Reminders
@@ -72,7 +76,7 @@ cards:
           target:
             entity_id: button.main_starter_fed_now
       - type: button
-        entity: button.main_starter_snooze
+        entity: button.main_starter_snooze_reminders
         name: Snooze
         icon: mdi:bell-sleep
         show_state: false
@@ -80,7 +84,7 @@ cards:
           action: call-service
           service: button.press
           target:
-            entity_id: button.main_starter_snooze
+            entity_id: button.main_starter_snooze_reminders
 
   - type: entities
     title: Reminder controls
