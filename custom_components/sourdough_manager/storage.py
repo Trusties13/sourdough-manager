@@ -33,6 +33,7 @@ class StarterStore:
                 "snoozed_until": None,
                 "snooze_hours": "1",
                 "last_audio_reminder_at": None,
+                "last_light_reminder_at": None,
             }
         else:
             data = migrate_storage(stored, default_location)
