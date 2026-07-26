@@ -2,7 +2,13 @@
 from homeassistant.const import Platform
 
 DOMAIN = "sourdough_manager"
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SELECT]
+PLATFORMS = [
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+    Platform.DATETIME,
+    Platform.SELECT,
+]
 
 STORAGE_VERSION = 2
 SCHEMA_VERSION = 3
@@ -14,6 +20,7 @@ CONF_BENCH_INTERVAL = "bench_interval_hours"
 CONF_FRIDGE_INTERVAL = "fridge_interval_hours"
 CONF_DUE_SOON = "due_soon_hours"
 CONF_LAST_FED = "last_fed"
+CONF_NOTIFICATION_TARGETS = "notification_targets"
 
 LOCATION_BENCH = "bench"
 LOCATION_FRIDGE = "refrigerator"

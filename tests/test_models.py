@@ -43,6 +43,14 @@ def test_overdue_hours():
     assert models.overdue_hours(due, datetime(2026, 7, 27, 8, tzinfo=UTC)) == 0
 
 
+def test_human_duration():
+    assert models.human_duration(0) == "Disabled"
+    assert models.human_duration(0.5) == "30 minutes"
+    assert models.human_duration(24) == "1 day"
+    assert models.human_duration(36) == "1 day 12 hours"
+    assert models.human_duration(168) == "7 days"
+
+
 def test_migrates_existing_active_cycle_and_location():
     migrated = models.migrate_storage(
         {
@@ -57,4 +65,6 @@ def test_migrates_existing_active_cycle_and_location():
         "last_fed": "2026-07-25T09:00:00+00:00",
         "location": "refrigerator",
         "location_changed_at": None,
+        "last_reminder_for": None,
+        "last_overdue_reminder_at": None,
     }
