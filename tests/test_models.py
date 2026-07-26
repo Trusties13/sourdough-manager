@@ -72,6 +72,21 @@ def test_human_clock_range():
     )
 
 
+def test_overdue_notification_copy_gets_firmer():
+    assert models.overdue_notification_copy("Main Starter", 1)[0] == (
+        "Main Starter feeding is due"
+    )
+    assert models.overdue_notification_copy("Main Starter", 3)[0] == (
+        "Main Starter feeding is overdue"
+    )
+    assert models.overdue_notification_copy("Main Starter", 13)[0] == (
+        "Main Starter needs feeding"
+    )
+    assert models.overdue_notification_copy("Main Starter", 25)[0] == (
+        "Main Starter is seriously overdue"
+    )
+
+
 def test_migrates_existing_active_cycle_and_location():
     migrated = models.migrate_storage(
         {
