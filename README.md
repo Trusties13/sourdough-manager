@@ -22,6 +22,8 @@ Each starter is represented by one Home Assistant device.
 - Repeating overdue reminders until the next feed is recorded
 - 1, 3 or 12-hour snooze control
 - Companion App notifications with **Fed now** and **Snooze** actions
+- Dynamic notification titles and progressively firmer overdue wording
+- Stable per-type notification tags, preventing repeated alerts from stacking
 - Optional confirmation when a feed is recorded
 - Duplicate protection for rapid physical-button presses
 - Human-friendly configuration summaries on the starter device
@@ -103,6 +105,9 @@ configured interval after the deadline until **Fed now**, **Last fed date** or
 
 Companion App targets receive **Fed now** and **Snooze** actions. Other
 notification entities receive the same reminder text without action buttons.
+Due-soon, overdue and confirmation notifications use separate stable tags.
+Repeated overdue reminders replace the previous overdue alert, and their
+wording becomes firmer after 2, 12 and 24 hours overdue.
 
 ## Physical button or NFC tag
 
