@@ -25,6 +25,7 @@ from .const import (
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
     CONF_LIGHT_TARGETS,
+    CONF_LIGHT_COLOR,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
@@ -37,6 +38,7 @@ from .const import (
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
+    DEFAULT_LIGHT_COLOR,
     DEFAULT_OVERDUE_INTERVAL,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
@@ -393,14 +395,17 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         was_on: bool,
         restore_data: dict[str, Any],
     ) -> None:
-        """Flash one light red three times and restore its prior settings."""
+        """Flash one light three times and restore its prior settings."""
+        flash_color = list(
+            self.option(CONF_LIGHT_COLOR, DEFAULT_LIGHT_COLOR)
+        )
         try:
             for _ in range(3):
                 await self.hass.services.async_call(
                     "light",
                     "turn_on",
                     {
-                        "rgb_color": [255, 0, 0],
+                        "rgb_color": flash_color,
                         "brightness": 255,
                         "transition": 0,
                     },
