@@ -17,7 +17,12 @@
           "quiet_hours_enabled": "Enable quiet hours",
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",
-          "confirm_feed": "Confirm recorded feeds"
+          "confirm_feed": "Confirm recorded feeds",
+          "audio_enabled": "Enable audio reminders",
+          "audio_tts_entity": "Text-to-speech provider",
+          "audio_targets": "Audio targets",
+          "audio_lead_time_hours": "Audio reminder lead time",
+          "audio_interval_minutes": "Audio reminder interval"
         },
         "data_description": {
           "last_fed": "Optional. Leave empty if the starter has not been fed yet.",
@@ -29,7 +34,12 @@
           "quiet_hours_enabled": "Suppress scheduled reminders during the configured overnight period.",
           "quiet_start": "No scheduled reminders are sent from this time.",
           "quiet_end": "Scheduled reminders resume at this time.",
-          "confirm_feed": "Send a confirmation to the same targets whenever a feed is recorded."
+          "confirm_feed": "Send a confirmation to the same targets whenever a feed is recorded.",
+          "audio_enabled": "Speak feeding reminders through Home Assistant media players.",
+          "audio_tts_entity": "Select the voice or text-to-speech provider used for announcements.",
+          "audio_targets": "Select one or more media players. Unavailable players are skipped.",
+          "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
+          "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze."
         }
       }
     }
@@ -47,7 +57,12 @@
           "quiet_hours_enabled": "Enable quiet hours",
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",
-          "confirm_feed": "Confirm recorded feeds"
+          "confirm_feed": "Confirm recorded feeds",
+          "audio_enabled": "Enable audio reminders",
+          "audio_tts_entity": "Text-to-speech provider",
+          "audio_targets": "Audio targets",
+          "audio_lead_time_hours": "Audio reminder lead time",
+          "audio_interval_minutes": "Audio reminder interval"
         },
         "data_description": {
           "bench_interval_hours": "Hours between feeds while stored on the bench.",
@@ -58,7 +73,12 @@
           "quiet_hours_enabled": "Suppress scheduled reminders during the configured overnight period.",
           "quiet_start": "No scheduled reminders are sent from this time.",
           "quiet_end": "Scheduled reminders resume at this time.",
-          "confirm_feed": "Send a confirmation to the same targets whenever a feed is recorded."
+          "confirm_feed": "Send a confirmation to the same targets whenever a feed is recorded.",
+          "audio_enabled": "Speak feeding reminders through Home Assistant media players.",
+          "audio_tts_entity": "Select the voice or text-to-speech provider used for announcements.",
+          "audio_targets": "Select one or more media players. Unavailable players are skipped.",
+          "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
+          "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze."
         }
       }
     }
@@ -82,7 +102,13 @@
       "overdue_reminder_interval": {"name": "Overdue reminder interval"},
       "quiet_hours": {"name": "Quiet hours"},
       "feed_confirmation": {"name": "Feed confirmation"},
-      "last_reminder_sent": {"name": "Last reminder sent"}
+      "last_reminder_sent": {"name": "Last reminder sent"},
+      "audio_reminders": {"name": "Audio reminders"},
+      "audio_tts_provider": {"name": "Audio voice"},
+      "audio_targets": {"name": "Audio targets"},
+      "audio_lead_time": {"name": "Audio reminder lead time"},
+      "audio_reminder_interval": {"name": "Audio reminder interval"},
+      "last_audio_reminder": {"name": "Last audio reminder"}
     },
     "binary_sensor": {
       "feed_due": {"name": "Feed due"},
