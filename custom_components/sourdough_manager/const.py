@@ -32,6 +32,7 @@ CONF_AUDIO_TTS_ENTITY = "audio_tts_entity"
 CONF_AUDIO_TARGETS = "audio_targets"
 CONF_AUDIO_LEAD_TIME = "audio_lead_time_hours"
 CONF_AUDIO_INTERVAL = "audio_interval_minutes"
+CONF_LIGHT_TARGETS = "light_targets"
 
 LOCATION_BENCH = "bench"
 LOCATION_FRIDGE = "refrigerator"
