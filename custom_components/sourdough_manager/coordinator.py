@@ -110,33 +110,39 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Refresh time-dependent entities and fire threshold events once."""
         is_due, is_due_soon = self.schedule_state()
+        reminder_sent = False
         if is_due_soon and not self._was_due_soon:
             self._fire(EVENT_DUE_SOON)
         if is_due_soon:
-            await self._async_send_reminder()
+            reminder_sent = await self._async_send_reminder()
         if is_due:
-            await self._async_send_overdue_reminder()
-        await self._async_send_audio_reminder()
-        await self._async_send_light_reminder()
+            reminder_sent = (
+                await self._async_send_overdue_reminder() or reminder_sent
+            )
+        reminder_sent = (
+            await self._async_send_audio_reminder() or reminder_sent
+        )
+        if reminder_sent:
+            await self._async_send_light_reminder()
         if is_due and not self._was_due:
             self._fire(EVENT_OVERDUE)
         self._was_due = is_due
         self._was_due_soon = is_due_soon
         return self.data
 
-    async def _async_send_reminder(self) -> None:
+    async def _async_send_reminder(self) -> bool:
         """Send at most one configured notification for the current deadline."""
         if self.notifications_paused():
-            return
+            return False
         targets = self.option(CONF_NOTIFICATION_TARGETS, [])
         if isinstance(targets, str):
             targets = [targets]
         due = self.next_due()
         if not targets or due is None:
-            return
+            return False
         due_key = due.isoformat()
         if self.data.get("last_reminder_for") == due_key:
-            return
+            return False
         data = {**self.data, "last_reminder_for": due_key}
         await self.store.save(data)
         self.async_set_updated_data(data)
@@ -149,24 +155,25 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             title=f"{self.entry.title} feeding due soon",
             notification_kind="due_soon",
         )
+        return True
 
-    async def _async_send_overdue_reminder(self) -> None:
+    async def _async_send_overdue_reminder(self) -> bool:
         """Repeat overdue notifications at the configured interval until fed."""
         if self.notifications_paused():
-            return
+            return False
         targets = self.option(CONF_NOTIFICATION_TARGETS, [])
         if isinstance(targets, str):
             targets = [targets]
         due = self.next_due()
         if not targets or due is None:
-            return
+            return False
         now = dt_util.utcnow()
         last_sent = parse_datetime(self.data.get("last_overdue_reminder_at"))
         interval = float(
             self.option(CONF_OVERDUE_INTERVAL, DEFAULT_OVERDUE_INTERVAL)
         )
         if last_sent and now - last_sent < timedelta(minutes=interval):
-            return
+            return False
         data = {**self.data, "last_overdue_reminder_at": now.isoformat()}
         await self.store.save(data)
         self.async_set_updated_data(data)
@@ -180,20 +187,21 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             title=title,
             notification_kind="overdue",
         )
+        return True
 
-    async def _async_send_audio_reminder(self) -> None:
+    async def _async_send_audio_reminder(self) -> bool:
         """Speak reminders on configured media players at its own cadence."""
         if not bool(self.option(CONF_AUDIO_ENABLED, False)):
-            return
+            return False
         if self.notifications_paused():
-            return
+            return False
         tts_entity = self.option(CONF_AUDIO_TTS_ENTITY, None)
         targets = self.option(CONF_AUDIO_TARGETS, [])
         if isinstance(targets, str):
             targets = [targets]
         due = self.next_due()
         if not tts_entity or not targets or due is None:
-            return
+            return False
         now = dt_util.utcnow()
         if not audio_reminder_due(
             now,
@@ -206,7 +214,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             parse_datetime(self.data.get("last_audio_reminder_at")),
             float(self.option(CONF_AUDIO_INTERVAL, DEFAULT_AUDIO_INTERVAL)),
         ):
-            return
+            return False
         if now < due:
             remaining = (due - now).total_seconds() / 3600
             message = (
@@ -239,30 +247,20 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data = {**self.data, "last_audio_reminder_at": now.isoformat()}
             await self.store.save(data)
             self.async_set_updated_data(data)
+        return spoken
 
-    async def _async_send_light_reminder(self) -> None:
-        """Flash configured colour lights when due, preserving prior state."""
-        if self.notifications_paused():
+    async def _async_send_light_reminder(
+        self, *, ignore_pause: bool = False
+    ) -> None:
+        """Accompany a sent push or audio reminder with a light flash."""
+        if not ignore_pause and self.notifications_paused():
             return
         targets = self.option(CONF_LIGHT_TARGETS, [])
         if isinstance(targets, str):
             targets = [targets]
-        due = self.next_due()
-        if not targets or due is None:
+        if not targets:
             return
         now = dt_util.utcnow()
-        if not audio_reminder_due(
-            now,
-            due,
-            0,
-            parse_datetime(self.data.get("last_light_reminder_at")),
-            float(
-                self.option(
-                    CONF_OVERDUE_INTERVAL, DEFAULT_OVERDUE_INTERVAL
-                )
-            ),
-        ):
-            return
         flashed = False
         for light in targets:
             state = self.hass.states.get(light)
@@ -284,6 +282,64 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data = {**self.data, "last_light_reminder_at": now.isoformat()}
             await self.store.save(data)
             self.async_set_updated_data(data)
+
+    async def test_push_reminder(self) -> None:
+        """Send a test push reminder and accompany it with the light alert."""
+        targets = self.option(CONF_NOTIFICATION_TARGETS, [])
+        if isinstance(targets, str):
+            targets = [targets]
+        if not targets:
+            raise HomeAssistantError(
+                "No notification targets are configured for this starter"
+            )
+        await self._async_notify(
+            targets,
+            (
+                f"This is a test feeding reminder for {self.entry.title}. "
+                "Your notification configuration is working."
+            ),
+            title=f"{self.entry.title} test reminder",
+            notification_kind="test",
+            actionable=False,
+            record_reminder=False,
+        )
+        await self._async_send_light_reminder(ignore_pause=True)
+
+    async def test_audio_reminder(self) -> None:
+        """Speak a test reminder and accompany it with the light alert."""
+        tts_entity = self.option(CONF_AUDIO_TTS_ENTITY, None)
+        targets = self.option(CONF_AUDIO_TARGETS, [])
+        if isinstance(targets, str):
+            targets = [targets]
+        if not tts_entity or not targets:
+            raise HomeAssistantError(
+                "A text-to-speech provider and audio target are required"
+            )
+        spoken = False
+        for media_player in targets:
+            state = self.hass.states.get(media_player)
+            if state is None or state.state in {"unavailable", "unknown"}:
+                continue
+            await self.hass.services.async_call(
+                "tts",
+                "speak",
+                {
+                    "media_player_entity_id": media_player,
+                    "message": (
+                        f"This is a test feeding reminder for "
+                        f"{self.entry.title}."
+                    ),
+                    "cache": True,
+                },
+                target={"entity_id": tts_entity},
+                blocking=False,
+            )
+            spoken = True
+        if not spoken:
+            raise HomeAssistantError(
+                "None of the configured audio targets are available"
+            )
+        await self._async_send_light_reminder(ignore_pause=True)
 
     async def _async_flash_light(
         self,
