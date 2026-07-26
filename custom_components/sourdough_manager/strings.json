@@ -24,7 +24,8 @@
           "audio_lead_time_hours": "Audio reminder lead time",
           "audio_interval_minutes": "Audio reminder interval",
           "audio_volume_percent": "Audio announcement volume",
-          "light_targets": "Light reminder targets"
+          "light_targets": "Light reminder targets",
+          "light_color": "Light reminder colour"
         },
         "data_description": {
           "last_fed": "Optional. Leave empty if the starter has not been fed yet.",
@@ -43,7 +44,8 @@
           "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
           "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze.",
           "audio_volume_percent": "Temporary volume used for spoken reminders. The previous player volume is restored after the announcement.",
-          "light_targets": "Select colour-capable lights to flash red three times whenever a push or audio feeding reminder is sent."
+          "light_targets": "Select colour-capable lights to flash three times whenever a push or audio feeding reminder is sent.",
+          "light_color": "Choose the reminder flash colour. The default is red."
         }
       }
     }
@@ -68,7 +70,8 @@
           "audio_lead_time_hours": "Audio reminder lead time",
           "audio_interval_minutes": "Audio reminder interval",
           "audio_volume_percent": "Audio announcement volume",
-          "light_targets": "Light reminder targets"
+          "light_targets": "Light reminder targets",
+          "light_color": "Light reminder colour"
         },
         "data_description": {
           "bench_interval_hours": "Hours between feeds while stored on the bench.",
@@ -86,7 +89,8 @@
           "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
           "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze.",
           "audio_volume_percent": "Temporary volume used for spoken reminders. The previous player volume is restored after the announcement.",
-          "light_targets": "Select colour-capable lights to flash red three times whenever a push or audio feeding reminder is sent."
+          "light_targets": "Select colour-capable lights to flash three times whenever a push or audio feeding reminder is sent.",
+          "light_color": "Choose the reminder flash colour. The default is red."
         }
       }
     }
@@ -157,6 +161,9 @@
       },
       "audio_volume": {
         "name": "Audio announcement volume"
+      },
+      "light_color": {
+        "name": "Light reminder colour"
       }
     },
     "binary_sensor": {
