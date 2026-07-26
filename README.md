@@ -11,11 +11,14 @@ Each starter is represented by one Home Assistant device.
 ## Features
 
 - **Fed now** button for one-tap logging
-- Optional retrospective feed action
+- Editable **Set last fed time** control for late logging
 - Bench or fridge storage selector
 - Configurable bench frequency, defaulting to 48 hours
 - Configurable fridge frequency, defaulting to 168 hours (7 days)
-- Configurable due-soon warning, defaulting to 12 hours
+- Configurable reminder lead time, defaulting to 12 hours
+- One or more selectable Home Assistant notification targets
+- Repeating overdue reminders every 30 minutes until the next feed is recorded
+- Human-friendly configuration summaries on the starter device
 - Last-fed and next-feed timestamps
 - Feed-due and feed-due-soon binary sensors
 - Overdue duration on the next-feed sensor
@@ -55,6 +58,11 @@ The integration creates:
 - Feed due soon
 - Feed due
 - Fed now
+- Set last fed time
+- Bench feed frequency
+- Fridge feed frequency
+- Reminder lead time
+- Notification targets
 
 After feeding the starter, press **Fed now**. The deadline is calculated from
 the selected storage location and its configured frequency.
@@ -62,20 +70,27 @@ the selected storage location and its configured frequency.
 Changing the storage location immediately recalculates the deadline from the
 existing last-fed time.
 
-## Feeding frequencies
+## Feeding reminders
 
 Open **Settings → Devices & services → Sourdough Manager → Configure**.
 
 - **Bench feed frequency:** hours between feeds; default 48
 - **Fridge feed frequency:** hours between feeds; default 168
-- **Due-soon warning:** hours before the deadline; default 12, or 0 to disable
+- **Reminder lead time:** hours before the deadline; default 12, or 0 to
+  disable the early reminder
+- **Notification targets:** one or more `notify` entities
 
 Changing a frequency immediately recalculates the next deadline.
+The integration sends one early reminder, then sends an overdue reminder every
+30 minutes after the deadline until **Fed now** is pressed or **Set last fed
+time** is changed.
 
 ## Record an earlier feed
 
-Normal use does not require Developer Tools. If you forgot to press **Fed now**,
-use this action to enter the real feeding time:
+If you forgot to press **Fed now**, edit **Set last fed time** on the starter
+device. This recalculates the next deadline and resets the reminder cycle.
+
+Automations can also record an earlier feed with this action:
 
 ```yaml
 action: sourdough_manager.record_feed
