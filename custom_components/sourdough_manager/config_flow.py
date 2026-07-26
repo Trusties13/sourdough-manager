@@ -17,6 +17,7 @@ from .const import (
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
+    CONF_LIGHT_TARGETS,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
@@ -134,6 +135,12 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
                     CONF_AUDIO_INTERVAL, DEFAULT_AUDIO_INTERVAL
                 ),
             ): vol.All(vol.Coerce(float), vol.Range(min=5, max=1440)),
+            vol.Optional(
+                CONF_LIGHT_TARGETS,
+                default=defaults.get(CONF_LIGHT_TARGETS, []),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="light", multiple=True)
+            ),
         }
     )
     return vol.Schema(fields)
