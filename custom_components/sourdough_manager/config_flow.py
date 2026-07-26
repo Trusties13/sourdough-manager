@@ -7,11 +7,17 @@ from homeassistant.const import CONF_NAME
 from homeassistant.helpers import selector
 
 from .const import (
+    CONF_AUDIO_ENABLED,
+    CONF_AUDIO_INTERVAL,
+    CONF_AUDIO_LEAD_TIME,
+    CONF_AUDIO_TARGETS,
+    CONF_AUDIO_TTS_ENTITY,
     CONF_BENCH_INTERVAL,
     CONF_CONFIRM_FEED,
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
+    CONF_LIGHT_TARGETS,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
@@ -19,6 +25,8 @@ from .const import (
     CONF_QUIET_HOURS_ENABLED,
     CONF_QUIET_START,
     CONF_STARTER_NAME,
+    DEFAULT_AUDIO_INTERVAL,
+    DEFAULT_AUDIO_LEAD_TIME,
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
@@ -42,6 +50,12 @@ def _serialise_times(data: dict) -> dict:
 
 def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
     fields: dict = {}
+    audio_tts_field = vol.Optional(CONF_AUDIO_TTS_ENTITY)
+    if defaults.get(CONF_AUDIO_TTS_ENTITY):
+        audio_tts_field = vol.Optional(
+            CONF_AUDIO_TTS_ENTITY,
+            default=defaults[CONF_AUDIO_TTS_ENTITY],
+        )
     if include_identity:
         fields[vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, "Main Starter"))] = str
         fields[vol.Required(CONF_LOCATION, default=defaults.get(CONF_LOCATION, "bench"))] = (
@@ -94,6 +108,39 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
                 CONF_CONFIRM_FEED,
                 default=defaults.get(CONF_CONFIRM_FEED, False),
             ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_AUDIO_ENABLED,
+                default=defaults.get(CONF_AUDIO_ENABLED, False),
+            ): selector.BooleanSelector(),
+            audio_tts_field: selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="tts")
+            ),
+            vol.Optional(
+                CONF_AUDIO_TARGETS,
+                default=defaults.get(CONF_AUDIO_TARGETS, []),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(
+                    domain="media_player", multiple=True
+                )
+            ),
+            vol.Required(
+                CONF_AUDIO_LEAD_TIME,
+                default=defaults.get(
+                    CONF_AUDIO_LEAD_TIME, DEFAULT_AUDIO_LEAD_TIME
+                ),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=168)),
+            vol.Required(
+                CONF_AUDIO_INTERVAL,
+                default=defaults.get(
+                    CONF_AUDIO_INTERVAL, DEFAULT_AUDIO_INTERVAL
+                ),
+            ): vol.All(vol.Coerce(float), vol.Range(min=5, max=1440)),
+            vol.Optional(
+                CONF_LIGHT_TARGETS,
+                default=defaults.get(CONF_LIGHT_TARGETS, []),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="light", multiple=True)
+            ),
         }
     )
     return vol.Schema(fields)

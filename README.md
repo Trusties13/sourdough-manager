@@ -22,6 +22,12 @@ Each starter is represented by one Home Assistant device.
 - Repeating overdue reminders until the next feed is recorded
 - 1, 3 or 12-hour snooze control
 - Companion App notifications with **Fed now** and **Snooze** actions
+- Dynamic notification titles and progressively firmer overdue wording
+- Stable per-type notification tags, preventing repeated alerts from stacking
+- Optional text-to-speech reminders on one or more media players
+- Independent audio lead time and repeat interval
+- Optional red-flash reminders on selected colour lights
+- Automatic restoration of each reminder light's prior state and colour
 - Optional confirmation when a feed is recorded
 - Duplicate protection for rapid physical-button presses
 - Human-friendly configuration summaries on the starter device
@@ -76,6 +82,14 @@ The integration creates:
 - Last reminder sent
 - Snooze duration
 - Snooze reminders
+- Audio reminders
+- Audio voice
+- Audio targets
+- Audio reminder lead time
+- Audio reminder interval
+- Last audio reminder
+- Light reminder targets
+- Last light reminder
 
 After feeding the starter, press **Fed now**. The deadline is calculated from
 the selected storage location and its configured frequency.
@@ -95,6 +109,12 @@ Open **Settings → Devices & services → Sourdough Manager → Configure**.
 - **Overdue reminder interval:** minutes between reminders after feeding is due
 - **Quiet hours:** optional start and end times that suppress scheduled reminders
 - **Confirm recorded feeds:** optionally acknowledge successful feed logging
+- **Enable audio reminders:** speak reminders through selected media players
+- **Text-to-speech provider:** the Home Assistant TTS entity/voice to use
+- **Audio targets:** one or more media players
+- **Audio reminder lead time:** when spoken reminders begin
+- **Audio reminder interval:** independent cadence for repeated announcements
+- **Light reminder targets:** colour-capable lights to accompany reminders
 
 Changing a frequency immediately recalculates the next deadline.
 The integration sends one early reminder, then sends an overdue reminder every
@@ -103,6 +123,27 @@ configured interval after the deadline until **Fed now**, **Last fed date** or
 
 Companion App targets receive **Fed now** and **Snooze** actions. Other
 notification entities receive the same reminder text without action buttons.
+Due-soon, overdue and confirmation notifications use separate stable tags.
+Repeated overdue reminders replace the previous overdue alert, and their
+wording becomes firmer after 2, 12 and 24 hours overdue.
+
+Audio reminders use Home Assistant's standard `tts.speak` action. They follow
+the same quiet hours and snooze state as push notifications, skip unavailable
+media players, use the escalating overdue wording and stop as soon as a feed is
+recorded.
+
+Selected reminder lights flash red three times whenever a scheduled push or
+audio reminder is actually sent. If both types are sent during the same update,
+the lights flash only once. Light reminders respect quiet hours and snooze.
+Each light's on/off state, brightness, colour mode, colour and effect are
+captured before flashing and restored afterwards. Originally-off lights finish
+off after their previous colour settings have been reapplied.
+
+The device also provides separate **Test push reminder** and **Test audio
+reminder** buttons. Tests use the configured targets, trigger the same light
+flash and do not alter the last-fed time or reminder schedule. Test buttons run
+even during quiet hours or a snooze so the complete configuration can be
+checked immediately.
 
 ## Physical button or NFC tag
 

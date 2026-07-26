@@ -106,6 +106,68 @@ def human_clock_range(start: str | time, end: str | time) -> str:
     return f"{_format(start)} to {_format(end)}"
 
 
+def overdue_notification_copy(
+    starter_name: str, hours_overdue: float
+) -> tuple[str, str]:
+    """Return progressively firmer overdue notification copy."""
+    delay = human_duration(hours_overdue)
+    if hours_overdue < 2:
+        return (
+            f"{starter_name} feeding is due",
+            f"{starter_name} is now due to be fed.",
+        )
+    if hours_overdue < 12:
+        return (
+            f"{starter_name} feeding is overdue",
+            f"{starter_name} is {delay} overdue. Please feed it when you can.",
+        )
+    if hours_overdue < 24:
+        return (
+            f"{starter_name} needs feeding",
+            f"{starter_name} is {delay} overdue and needs attention soon.",
+        )
+    return (
+        f"{starter_name} is seriously overdue",
+        f"{starter_name} is {delay} overdue. Please feed it as soon as possible.",
+    )
+
+
+def audio_reminder_due(
+    now: datetime,
+    due: datetime,
+    lead_hours: float,
+    last_sent: datetime | None,
+    interval_minutes: float,
+) -> bool:
+    """Return whether an audio reminder should be spoken now."""
+    if now < due - timedelta(hours=lead_hours):
+        return False
+    return last_sent is None or now - last_sent >= timedelta(
+        minutes=interval_minutes
+    )
+
+
+def light_restore_data(attributes: dict[str, Any]) -> dict[str, Any]:
+    """Extract restorable light settings from Home Assistant state attributes."""
+    data: dict[str, Any] = {}
+    if attributes.get("brightness") is not None:
+        data["brightness"] = attributes["brightness"]
+    color_mode = attributes.get("color_mode")
+    color_keys = {
+        "hs": "hs_color",
+        "xy": "xy_color",
+        "rgb": "rgb_color",
+        "rgbw": "rgbw_color",
+        "rgbww": "rgbww_color",
+        "color_temp": "color_temp_kelvin",
+    }
+    if (key := color_keys.get(color_mode)) and attributes.get(key) is not None:
+        data[key] = attributes[key]
+    if attributes.get("effect") is not None:
+        data["effect"] = attributes["effect"]
+    return data
+
+
 def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any]:
     """Reduce an older detailed store to the focused schema."""
     last_fed = old.get("last_fed")
@@ -122,4 +184,6 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         "last_reminder_sent_at": old.get("last_reminder_sent_at"),
         "snoozed_until": old.get("snoozed_until"),
         "snooze_hours": old.get("snooze_hours", "1"),
+        "last_audio_reminder_at": old.get("last_audio_reminder_at"),
+        "last_light_reminder_at": old.get("last_light_reminder_at"),
     }

@@ -17,7 +17,13 @@
           "quiet_hours_enabled": "Enable quiet hours",
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",
-          "confirm_feed": "Confirm recorded feeds"
+          "confirm_feed": "Confirm recorded feeds",
+          "audio_enabled": "Enable audio reminders",
+          "audio_tts_entity": "Text-to-speech provider",
+          "audio_targets": "Audio targets",
+          "audio_lead_time_hours": "Audio reminder lead time",
+          "audio_interval_minutes": "Audio reminder interval",
+          "light_targets": "Light reminder targets"
         },
         "data_description": {
           "last_fed": "Optional. Leave empty if the starter has not been fed yet.",
@@ -29,7 +35,13 @@
           "quiet_hours_enabled": "Suppress scheduled reminders during the configured overnight period.",
           "quiet_start": "No scheduled reminders are sent from this time.",
           "quiet_end": "Scheduled reminders resume at this time.",
-          "confirm_feed": "Send a confirmation to the same targets whenever a feed is recorded."
+          "confirm_feed": "Send a confirmation to the same targets whenever a feed is recorded.",
+          "audio_enabled": "Speak feeding reminders through Home Assistant media players.",
+          "audio_tts_entity": "Select the voice or text-to-speech provider used for announcements.",
+          "audio_targets": "Select one or more media players. Unavailable players are skipped.",
+          "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
+          "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze.",
+          "light_targets": "Select colour-capable lights to flash red three times whenever a push or audio feeding reminder is sent."
         }
       }
     }
@@ -47,7 +59,13 @@
           "quiet_hours_enabled": "Enable quiet hours",
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",
-          "confirm_feed": "Confirm recorded feeds"
+          "confirm_feed": "Confirm recorded feeds",
+          "audio_enabled": "Enable audio reminders",
+          "audio_tts_entity": "Text-to-speech provider",
+          "audio_targets": "Audio targets",
+          "audio_lead_time_hours": "Audio reminder lead time",
+          "audio_interval_minutes": "Audio reminder interval",
+          "light_targets": "Light reminder targets"
         },
         "data_description": {
           "bench_interval_hours": "Hours between feeds while stored on the bench.",
@@ -58,7 +76,13 @@
           "quiet_hours_enabled": "Suppress scheduled reminders during the configured overnight period.",
           "quiet_start": "No scheduled reminders are sent from this time.",
           "quiet_end": "Scheduled reminders resume at this time.",
-          "confirm_feed": "Send a confirmation to the same targets whenever a feed is recorded."
+          "confirm_feed": "Send a confirmation to the same targets whenever a feed is recorded.",
+          "audio_enabled": "Speak feeding reminders through Home Assistant media players.",
+          "audio_tts_entity": "Select the voice or text-to-speech provider used for announcements.",
+          "audio_targets": "Select one or more media players. Unavailable players are skipped.",
+          "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
+          "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze.",
+          "light_targets": "Select colour-capable lights to flash red three times whenever a push or audio feeding reminder is sent."
         }
       }
     }
@@ -73,30 +97,92 @@
   },
   "entity": {
     "sensor": {
-      "last_fed": {"name": "Last fed"},
-      "next_feed_due": {"name": "Next feed due"},
-      "bench_feed_frequency": {"name": "Bench feed frequency"},
-      "fridge_feed_frequency": {"name": "Fridge feed frequency"},
-      "reminder_lead_time": {"name": "Reminder lead time"},
-      "notification_targets": {"name": "Notification targets"},
-      "overdue_reminder_interval": {"name": "Overdue reminder interval"},
-      "quiet_hours": {"name": "Quiet hours"},
-      "feed_confirmation": {"name": "Feed confirmation"},
-      "last_reminder_sent": {"name": "Last reminder sent"}
+      "last_fed": {
+        "name": "Last fed"
+      },
+      "next_feed_due": {
+        "name": "Next feed due"
+      },
+      "bench_feed_frequency": {
+        "name": "Bench feed frequency"
+      },
+      "fridge_feed_frequency": {
+        "name": "Fridge feed frequency"
+      },
+      "reminder_lead_time": {
+        "name": "Reminder lead time"
+      },
+      "notification_targets": {
+        "name": "Notification targets"
+      },
+      "overdue_reminder_interval": {
+        "name": "Overdue reminder interval"
+      },
+      "quiet_hours": {
+        "name": "Quiet hours"
+      },
+      "feed_confirmation": {
+        "name": "Feed confirmation"
+      },
+      "last_reminder_sent": {
+        "name": "Last reminder sent"
+      },
+      "audio_reminders": {
+        "name": "Audio reminders"
+      },
+      "audio_tts_provider": {
+        "name": "Audio voice"
+      },
+      "audio_targets": {
+        "name": "Audio targets"
+      },
+      "audio_lead_time": {
+        "name": "Audio reminder lead time"
+      },
+      "audio_reminder_interval": {
+        "name": "Audio reminder interval"
+      },
+      "last_audio_reminder": {
+        "name": "Last audio reminder"
+      },
+      "light_targets": {
+        "name": "Light reminder targets"
+      },
+      "last_light_reminder": {
+        "name": "Last light reminder"
+      }
     },
     "binary_sensor": {
-      "feed_due": {"name": "Feed due"},
-      "feed_due_soon": {"name": "Feed due soon"}
+      "feed_due": {
+        "name": "Feed due"
+      },
+      "feed_due_soon": {
+        "name": "Feed due soon"
+      }
     },
     "button": {
-      "fed_now": {"name": "Fed now"},
-      "snooze": {"name": "Snooze reminders"}
+      "fed_now": {
+        "name": "Fed now"
+      },
+      "snooze": {
+        "name": "Snooze reminders"
+      },
+      "test_push_reminder": {
+        "name": "Test push reminder"
+      },
+      "test_audio_reminder": {
+        "name": "Test audio reminder"
+      }
     },
     "date": {
-      "last_fed_date": {"name": "Last fed date"}
+      "last_fed_date": {
+        "name": "Last fed date"
+      }
     },
     "time": {
-      "last_fed_clock": {"name": "Last fed time"}
+      "last_fed_clock": {
+        "name": "Last fed time"
+      }
     },
     "select": {
       "storage_location": {

@@ -5,15 +5,23 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.helpers.entity import EntityCategory
 
 from .const import (
+    CONF_AUDIO_ENABLED,
+    CONF_AUDIO_INTERVAL,
+    CONF_AUDIO_LEAD_TIME,
+    CONF_AUDIO_TARGETS,
+    CONF_AUDIO_TTS_ENTITY,
     CONF_BENCH_INTERVAL,
     CONF_CONFIRM_FEED,
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
+    CONF_LIGHT_TARGETS,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
     CONF_QUIET_END,
     CONF_QUIET_HOURS_ENABLED,
     CONF_QUIET_START,
+    DEFAULT_AUDIO_INTERVAL,
+    DEFAULT_AUDIO_LEAD_TIME,
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
@@ -54,6 +62,19 @@ async def async_setup_entry(hass, entry, async_add_entities):
             QuietHoursSensor(entry.runtime_data),
             FeedConfirmationSensor(entry.runtime_data),
             LastReminderSentSensor(entry.runtime_data),
+            AudioStatusSensor(entry.runtime_data),
+            AudioTtsSensor(entry.runtime_data),
+            AudioTargetsSensor(entry.runtime_data),
+            DurationSettingSensor(
+                entry.runtime_data,
+                "audio_lead_time",
+                CONF_AUDIO_LEAD_TIME,
+                DEFAULT_AUDIO_LEAD_TIME,
+            ),
+            AudioIntervalSensor(entry.runtime_data),
+            LastAudioReminderSensor(entry.runtime_data),
+            LightTargetsSensor(entry.runtime_data),
+            LastLightReminderSensor(entry.runtime_data),
         ]
     )
 
@@ -223,3 +244,148 @@ class LastReminderSentSensor(StarterEntity, SensorEntity):
     @property
     def native_value(self):
         return parse_datetime(self.coordinator.data.get("last_reminder_sent_at"))
+
+
+class AudioStatusSensor(StarterEntity, SensorEntity):
+    """Whether spoken reminders are enabled."""
+
+    _attr_translation_key = "audio_reminders"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "audio_reminders")
+
+    @property
+    def native_value(self):
+        return (
+            "Enabled"
+            if bool(self.coordinator.option(CONF_AUDIO_ENABLED, False))
+            else "Disabled"
+        )
+
+
+class AudioTtsSensor(StarterEntity, SensorEntity):
+    """Configured text-to-speech provider."""
+
+    _attr_translation_key = "audio_tts_provider"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "audio_tts_provider")
+
+    @property
+    def native_value(self):
+        entity_id = self.coordinator.option(CONF_AUDIO_TTS_ENTITY, None)
+        if not entity_id:
+            return "Not configured"
+        state = self.hass.states.get(entity_id)
+        return state.name if state else entity_id
+
+
+class AudioTargetsSensor(StarterEntity, SensorEntity):
+    """Configured spoken reminder targets."""
+
+    _attr_translation_key = "audio_targets"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "audio_targets")
+
+    @property
+    def native_value(self):
+        targets = self.coordinator.option(CONF_AUDIO_TARGETS, [])
+        if isinstance(targets, str):
+            targets = [targets]
+        if not targets:
+            return "Not configured"
+        names = [
+            self.hass.states.get(entity_id).name
+            if self.hass.states.get(entity_id)
+            else entity_id
+            for entity_id in targets
+        ]
+        return ", ".join(names)[:255]
+
+
+class AudioIntervalSensor(OverdueIntervalSensor):
+    """Configured repeat interval for spoken reminders."""
+
+    def __init__(self, coordinator):
+        StarterEntity.__init__(self, coordinator, "audio_reminder_interval")
+        self._attr_translation_key = "audio_reminder_interval"
+
+    @property
+    def native_value(self):
+        minutes = float(
+            self.coordinator.option(CONF_AUDIO_INTERVAL, DEFAULT_AUDIO_INTERVAL)
+        )
+        return human_duration(minutes / 60)
+
+    @property
+    def extra_state_attributes(self):
+        return {
+            "minutes": float(
+                self.coordinator.option(
+                    CONF_AUDIO_INTERVAL, DEFAULT_AUDIO_INTERVAL
+                )
+            )
+        }
+
+
+class LastAudioReminderSensor(StarterEntity, SensorEntity):
+    """Timestamp of the most recent spoken reminder."""
+
+    _attr_translation_key = "last_audio_reminder"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "last_audio_reminder")
+
+    @property
+    def native_value(self):
+        return parse_datetime(
+            self.coordinator.data.get("last_audio_reminder_at")
+        )
+
+
+class LightTargetsSensor(StarterEntity, SensorEntity):
+    """Configured visual reminder targets."""
+
+    _attr_translation_key = "light_targets"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "light_targets")
+
+    @property
+    def native_value(self):
+        targets = self.coordinator.option(CONF_LIGHT_TARGETS, [])
+        if isinstance(targets, str):
+            targets = [targets]
+        if not targets:
+            return "Not configured"
+        names = [
+            self.hass.states.get(entity_id).name
+            if self.hass.states.get(entity_id)
+            else entity_id
+            for entity_id in targets
+        ]
+        return ", ".join(names)[:255]
+
+
+class LastLightReminderSensor(StarterEntity, SensorEntity):
+    """Timestamp of the most recent light reminder."""
+
+    _attr_translation_key = "last_light_reminder"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "last_light_reminder")
+
+    @property
+    def native_value(self):
+        return parse_datetime(
+            self.coordinator.data.get("last_light_reminder_at")
+        )

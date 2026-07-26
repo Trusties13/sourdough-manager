@@ -72,6 +72,61 @@ def test_human_clock_range():
     )
 
 
+def test_overdue_notification_copy_gets_firmer():
+    assert models.overdue_notification_copy("Main Starter", 1)[0] == (
+        "Main Starter feeding is due"
+    )
+    assert models.overdue_notification_copy("Main Starter", 3)[0] == (
+        "Main Starter feeding is overdue"
+    )
+    assert models.overdue_notification_copy("Main Starter", 13)[0] == (
+        "Main Starter needs feeding"
+    )
+    assert models.overdue_notification_copy("Main Starter", 25)[0] == (
+        "Main Starter is seriously overdue"
+    )
+
+
+def test_audio_reminder_has_independent_lead_time_and_interval():
+    due = datetime(2026, 7, 27, 9, tzinfo=UTC)
+    assert not models.audio_reminder_due(
+        datetime(2026, 7, 27, 6, tzinfo=UTC), due, 2, None, 60
+    )
+    assert models.audio_reminder_due(
+        datetime(2026, 7, 27, 7, tzinfo=UTC), due, 2, None, 60
+    )
+    assert not models.audio_reminder_due(
+        datetime(2026, 7, 27, 8, tzinfo=UTC),
+        due,
+        2,
+        datetime(2026, 7, 27, 7, 30, tzinfo=UTC),
+        60,
+    )
+    assert models.audio_reminder_due(
+        datetime(2026, 7, 27, 8, 30, tzinfo=UTC),
+        due,
+        2,
+        datetime(2026, 7, 27, 7, 30, tzinfo=UTC),
+        60,
+    )
+
+
+def test_light_restore_data_uses_original_mode_and_brightness():
+    assert models.light_restore_data(
+        {
+            "brightness": 120,
+            "color_mode": "hs",
+            "hs_color": (30.0, 70.0),
+            "rgb_color": (255, 127, 76),
+            "effect": "none",
+        }
+    ) == {
+        "brightness": 120,
+        "hs_color": (30.0, 70.0),
+        "effect": "none",
+    }
+
+
 def test_migrates_existing_active_cycle_and_location():
     migrated = models.migrate_storage(
         {
@@ -91,4 +146,6 @@ def test_migrates_existing_active_cycle_and_location():
         "last_reminder_sent_at": None,
         "snoozed_until": None,
         "snooze_hours": "1",
+        "last_audio_reminder_at": None,
+        "last_light_reminder_at": None,
     }
