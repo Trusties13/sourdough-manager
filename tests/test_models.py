@@ -51,6 +51,27 @@ def test_human_duration():
     assert models.human_duration(168) == "7 days"
 
 
+def test_quiet_hours_across_midnight():
+    assert models.quiet_hours_active(
+        datetime(2026, 7, 26, 23), True, "22:00:00", "07:00:00"
+    )
+    assert models.quiet_hours_active(
+        datetime(2026, 7, 26, 6), True, "22:00:00", "07:00:00"
+    )
+    assert not models.quiet_hours_active(
+        datetime(2026, 7, 26, 12), True, "22:00:00", "07:00:00"
+    )
+    assert not models.quiet_hours_active(
+        datetime(2026, 7, 26, 23), False, "22:00:00", "07:00:00"
+    )
+
+
+def test_human_clock_range():
+    assert models.human_clock_range("22:00:00", "07:30:00") == (
+        "10:00 pm to 7:30 am"
+    )
+
+
 def test_migrates_existing_active_cycle_and_location():
     migrated = models.migrate_storage(
         {
@@ -67,4 +88,7 @@ def test_migrates_existing_active_cycle_and_location():
         "location_changed_at": None,
         "last_reminder_for": None,
         "last_overdue_reminder_at": None,
+        "last_reminder_sent_at": None,
+        "snoozed_until": None,
+        "snooze_hours": "1",
     }
