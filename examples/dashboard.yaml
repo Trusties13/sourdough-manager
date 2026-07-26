@@ -1,19 +1,4 @@
-# These IDs match this installation: original entities retain `main_starter`, while newer controls use `kitchen_main_starter`.
-type: vertical-stack
-cards:
-  - type: markdown
-    content: |
-      ## 🫙 Main Starter
-      {% if is_state('binary_sensor.main_starter_feed_due', 'on') %}
-        🔴 **Feeding is overdue**
-      {% elif is_state('binary_sensor.main_starter_feed_due_soon', 'on') %}
-        🟠 **Feeding is due soon**
-      {% else %}
-        🟢 **Starter is on schedule**
-      {% endif %}
-      {% set next_feed = states('sensor.main_starter_next_feed_due') %}
-      {% if next_feed not in ['unknown', 'unavailable', 'none'] %}
-
+# This example uses the entity prefix generated for the Kitchen / Main Starter device.
       **Next feed:** {{ as_timestamp(next_feed) | timestamp_custom('%A, %-d %B at %-I:%M %p', true) }}
       {% endif %}
 
@@ -74,7 +59,7 @@ cards:
           action: call-service
           service: button.press
           target:
-            entity_id: button.main_starter_fed_now
+            entity_id: button.kitchen_main_starter_fed_now
       - type: button
         entity: button.kitchen_main_starter_snooze_reminders
         name: Snooze
@@ -102,8 +87,4 @@ cards:
   - type: entities
     title: Correct a late entry
     show_header_toggle: false
-    entities:
-      - entity: date.kitchen_main_starter_last_fed_date
-        name: Last fed date
-      - entity: time.kitchen_main_starter_last_fed_time
         name: Last fed time
