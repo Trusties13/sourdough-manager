@@ -19,6 +19,9 @@ from .const import (
     CONF_FRIDGE_INTERVAL,
     CONF_LAST_FED,
     CONF_LIGHT_COLOR,
+    CONF_LIGHT_FLASH_COUNT,
+    CONF_LIGHT_GAP_SECONDS,
+    CONF_LIGHT_PULSE_SECONDS,
     CONF_LIGHT_TARGETS,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
@@ -34,6 +37,9 @@ from .const import (
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
     DEFAULT_LIGHT_COLOR,
+    DEFAULT_LIGHT_FLASH_COUNT,
+    DEFAULT_LIGHT_GAP_SECONDS,
+    DEFAULT_LIGHT_PULSE_SECONDS,
     DEFAULT_OVERDUE_INTERVAL,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
@@ -165,6 +171,48 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
                     CONF_LIGHT_COLOR, DEFAULT_LIGHT_COLOR
                 ),
             ): selector.ColorRGBSelector(),
+            vol.Required(
+                CONF_LIGHT_FLASH_COUNT,
+                default=defaults.get(
+                    CONF_LIGHT_FLASH_COUNT, DEFAULT_LIGHT_FLASH_COUNT
+                ),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=1,
+                    max=10,
+                    step=1,
+                    mode=selector.NumberSelectorMode.BOX,
+                )
+            ),
+            vol.Required(
+                CONF_LIGHT_PULSE_SECONDS,
+                default=defaults.get(
+                    CONF_LIGHT_PULSE_SECONDS,
+                    DEFAULT_LIGHT_PULSE_SECONDS,
+                ),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0.1,
+                    max=5,
+                    step=0.1,
+                    mode=selector.NumberSelectorMode.SLIDER,
+                    unit_of_measurement="s",
+                )
+            ),
+            vol.Required(
+                CONF_LIGHT_GAP_SECONDS,
+                default=defaults.get(
+                    CONF_LIGHT_GAP_SECONDS, DEFAULT_LIGHT_GAP_SECONDS
+                ),
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0.1,
+                    max=5,
+                    step=0.1,
+                    mode=selector.NumberSelectorMode.SLIDER,
+                    unit_of_measurement="s",
+                )
+            ),
         }
     )
     return vol.Schema(fields)

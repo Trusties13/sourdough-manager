@@ -17,6 +17,7 @@ Each starter is represented by one Home Assistant device.
 - Configurable fridge frequency, defaulting to 168 hours (7 days)
 - Configurable reminder lead time, defaulting to 12 hours
 - Configurable overdue reminder interval
+- Master switch for all scheduled reminders
 - Optional overnight quiet hours
 - One or more selectable Home Assistant notification targets
 - Repeating overdue reminders until the next feed is recorded
@@ -27,6 +28,7 @@ Each starter is represented by one Home Assistant device.
 - Optional text-to-speech reminders on one or more media players
 - Independent audio lead time and repeat interval
 - Optional red-flash reminders on selected colour lights
+- Configurable light flash count, pulse duration and gap
 - Automatic restoration of each reminder light's prior state and colour
 - Optional confirmation when a feed is recorded
 - Duplicate protection for rapid physical-button presses
@@ -117,6 +119,9 @@ Open **Settings → Devices & services → Sourdough Manager → Configure**.
 - **Audio announcement volume:** temporary playback level for announcements
 - **Light reminder targets:** colour-capable lights to accompany reminders
 - **Light reminder colour:** selectable RGB colour, defaulting to red
+- **Light flash count:** number of reminder-colour pulses; default 3
+- **Light pulse duration:** seconds per colour pulse; default 1
+- **Light gap duration:** seconds between pulses; default 0.25
 
 Changing a frequency immediately recalculates the next deadline.
 The integration sends one early reminder, then sends an overdue reminder every
@@ -128,6 +133,10 @@ notification entities receive the same reminder text without action buttons.
 Due-soon, overdue and confirmation notifications use separate stable tags.
 Repeated overdue reminders replace the previous overdue alert, and their
 wording becomes firmer after 2, 12 and 24 hours overdue.
+Pressing **Fed now** or setting an earlier feed clears the tagged overdue
+Companion App notification. The **Reminders** switch disables or enables all
+scheduled push, audio and light reminders without discarding their settings.
+Test buttons remain available while reminders are disabled.
 
 Audio reminders use Home Assistant's standard `tts.speak` action. They follow
 the same quiet hours and snooze state as push notifications, skip unavailable
@@ -152,6 +161,21 @@ flash and do not alter the last-fed time or reminder schedule. Test buttons run
 even during quiet hours or a snooze so the complete configuration can be
 checked immediately. Both tests use the same wording as a one-hour-overdue feed
 reminder, clearly prefixed as a test.
+
+## Dashboard card
+
+A dependency-free Lovelace card is provided in
+[`examples/dashboard.yaml`](examples/dashboard.yaml). It includes:
+
+- a dynamic on-schedule, due-soon or overdue heading
+- last-fed and next-feed tiles
+- storage location and reminder master controls
+- prominent **Fed now** and **Snooze** buttons
+- push/audio test controls
+- compact retrospective date and time controls
+
+Copy the YAML into a Manual card and replace `main_starter` if your generated
+entity IDs use a different prefix.
 
 ## Physical button or NFC tag
 
