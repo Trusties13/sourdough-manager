@@ -11,7 +11,9 @@ cards:
         content: |
           ## 🫙 Main Starter
 
-          {% if is_state('binary_sensor.kitchen_main_starter_feed_due', 'on') %}
+          {% if is_state('binary_sensor.holiday_mode', 'on') %}
+            ✈️ **Holiday mode — reminders paused**
+          {% elif is_state('binary_sensor.kitchen_main_starter_feed_due', 'on') %}
             🔴 **Feeding is overdue**
           {% elif is_state('binary_sensor.kitchen_main_starter_feed_due_soon', 'on') %}
             🟠 **Feeding is due soon**
@@ -77,6 +79,14 @@ cards:
             entity: switch.kitchen_main_starter_reminders
             name: Reminders
             icon: mdi:bell-ring-outline
+          - type: tile
+            entity: sensor.kitchen_main_starter_schedule_status
+            name: Schedule
+            icon: mdi:calendar-check
+          - type: tile
+            entity: sensor.kitchen_main_starter_missed_feed_count
+            name: Missed feeds
+            icon: mdi:calendar-alert
 
       - type: grid
         columns: 2
@@ -102,21 +112,68 @@ cards:
               perform_action: button.press
               target:
                 entity_id: button.kitchen_main_starter_snooze_reminders
+          - type: button
+            entity: button.kitchen_main_starter_feed_and_refrigerate
+            name: Feed and refrigerate
+            icon: mdi:fridge
+            show_state: false
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.kitchen_main_starter_feed_and_refrigerate
 
-      - type: entities
-        title: Adjust next feed
-        show_header_toggle: false
-        entities:
-          - entity: select.kitchen_main_starter_delay_duration
-            name: Delay by
-          - entity: button.kitchen_main_starter_delay_next_feed
-            name: Apply one-off delay
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.kitchen_main_starter_feed_due_today
+            state: "on"
+        card:
+          type: entities
+          title: Adjust today's feed
+          show_header_toggle: false
+          entities:
+            - entity: select.kitchen_main_starter_delay_duration
+              name: Delay by
+            - entity: button.kitchen_main_starter_delay_next_feed
+              name: Apply one-off delay
+            - entity: datetime.kitchen_main_starter_next_feed_deadline
+              name: Choose another date and time
+
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.main_starter_feed_due
+            state: "on"
+          - entity: binary_sensor.kitchen_main_starter_feed_due_today
+            state: "off"
+        card:
+          type: entities
+          title: Reschedule overdue feed
+          show_header_toggle: false
+          entities:
+            - entity: select.kitchen_main_starter_delay_duration
+              name: Delay by
+            - entity: button.kitchen_main_starter_delay_next_feed
+              name: Apply one-off delay
+            - entity: datetime.kitchen_main_starter_next_feed_deadline
+              name: Choose another date and time
 
       - type: calendar
         title: Feeding schedule
         entities:
           - calendar.kitchen_main_starter_feeding_calendar
         initial_view: listWeek
+
+      - type: markdown
+        content: |
+          ## Recent feeds
+          {% set feeds = state_attr('sensor.kitchen_main_starter_feed_history', 'feeds') or [] %}
+          {% if feeds %}
+            {% for feed in (feeds | reverse | list)[:5] %}
+              - {{ as_timestamp(feed.fed_at) | timestamp_custom('%A, %-d %B at %-I:%M %p', true) }} — {{ 'Fridge' if feed.location == 'refrigerator' else 'Bench' }}
+            {% endfor %}
+          {% else %}
+            No feeds have been recorded yet.
+          {% endif %}
 
       - type: entities
         title: Reminder controls

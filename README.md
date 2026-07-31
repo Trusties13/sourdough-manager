@@ -15,8 +15,13 @@ Each starter is represented by one Home Assistant device.
 - Bench or fridge storage selector
 - Configurable bench frequency, defaulting to 48 hours
 - Configurable fridge frequency, defaulting to 168 hours (7 days)
-- Optional preferred local feeding time
+- Optional, separate preferred feeding times for bench and fridge storage
 - One-off 1-hour, 3-hour or tomorrow-morning deadline delays
+- Delay controls limited to the due date and overdue period
+- Existing holiday-mode sensor support for pausing reminders
+- **Feed and refrigerate** combined action
+- Due-today, schedule-status and missed-feed sensors
+- Editable one-off next-feed deadline
 - Custom next-deadline action for automations
 - Compact history of the most recent 20 feeds
 - Feeding calendar for dashboards and calendar automations
@@ -107,9 +112,9 @@ Changing the storage location immediately recalculates the deadline from the
 existing last-fed time.
 
 Enable **Use a preferred feeding time** to align each interval-based deadline
-to a consistent local clock time, such as 9:00 am. Select a one-off delay and
-press **Delay next feed** when the current deadline needs to move without
-changing the recorded last-fed time.
+to the separately configured bench or fridge clock time. Delay and editable
+deadline controls become available on the scheduled feed date and remain
+available while the feed is overdue.
 
 ## Feeding reminders
 
@@ -117,7 +122,10 @@ Open **Settings → Devices & services → Sourdough Manager → Configure**.
 
 - **Bench feed frequency:** hours between feeds; default 48
 - **Fridge feed frequency:** hours between feeds; default 168
-- **Preferred feeding time:** optional consistent local deadline time
+- **Preferred bench feeding time:** consistent local bench deadline time
+- **Preferred fridge feeding time:** consistent local refrigerated deadline time
+- **Holiday mode sensor:** existing binary sensor that pauses all scheduled
+  reminders while on; defaults to `binary_sensor.holiday_mode`
 - **Reminder lead time:** hours before the deadline; default 12, or 0 to
   disable the early reminder
 - **Notification targets:** one or more `notify` entities
@@ -188,6 +196,9 @@ A dependency-free Lovelace card is provided in
 - compact retrospective date and time controls
 - one-off deadline delay controls
 - the feeding calendar
+- recent feed history
+- conditional overdue rescheduling
+- a combined **Feed and refrigerate** action
 
 Copy the YAML into a Manual card and replace `main_starter` if your generated
 entity IDs use a different prefix.

@@ -8,6 +8,7 @@ PLATFORMS = [
     Platform.BUTTON,
     Platform.CALENDAR,
     Platform.DATE,
+    Platform.DATETIME,
     Platform.EVENT,
     Platform.SELECT,
     Platform.SWITCH,
@@ -15,7 +16,7 @@ PLATFORMS = [
 ]
 
 STORAGE_VERSION = 2
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 STORAGE_KEY_PREFIX = f"{DOMAIN}.starter"
 
 CONF_STARTER_NAME = "starter_name"
@@ -43,6 +44,9 @@ CONF_LIGHT_PULSE_SECONDS = "light_pulse_seconds"
 CONF_LIGHT_GAP_SECONDS = "light_gap_seconds"
 CONF_PREFERRED_TIME_ENABLED = "preferred_time_enabled"
 CONF_PREFERRED_TIME = "preferred_feed_time"
+CONF_BENCH_PREFERRED_TIME = "bench_preferred_feed_time"
+CONF_FRIDGE_PREFERRED_TIME = "fridge_preferred_feed_time"
+CONF_HOLIDAY_MODE_ENTITY = "holiday_mode_entity"
 
 LOCATION_BENCH = "bench"
 LOCATION_FRIDGE = "refrigerator"
@@ -60,6 +64,7 @@ DEFAULT_LIGHT_FLASH_COUNT = 3
 DEFAULT_LIGHT_PULSE_SECONDS = 1.0
 DEFAULT_LIGHT_GAP_SECONDS = 0.25
 DEFAULT_PREFERRED_TIME = "09:00:00"
+DEFAULT_HOLIDAY_MODE_ENTITY = "binary_sensor.holiday_mode"
 DEFAULT_QUIET_START = "22:00:00"
 DEFAULT_QUIET_END = "07:00:00"
 DEFAULT_SNOOZE_HOURS = "1"

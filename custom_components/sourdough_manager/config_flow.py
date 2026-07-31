@@ -14,9 +14,12 @@ from .const import (
     CONF_AUDIO_TTS_ENTITY,
     CONF_AUDIO_VOLUME,
     CONF_BENCH_INTERVAL,
+    CONF_BENCH_PREFERRED_TIME,
     CONF_CONFIRM_FEED,
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
+    CONF_FRIDGE_PREFERRED_TIME,
+    CONF_HOLIDAY_MODE_ENTITY,
     CONF_LAST_FED,
     CONF_LIGHT_COLOR,
     CONF_LIGHT_FLASH_COUNT,
@@ -38,6 +41,7 @@ from .const import (
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
+    DEFAULT_HOLIDAY_MODE_ENTITY,
     DEFAULT_LIGHT_COLOR,
     DEFAULT_LIGHT_FLASH_COUNT,
     DEFAULT_LIGHT_GAP_SECONDS,
@@ -55,7 +59,13 @@ INTERVAL_SCHEMA = vol.All(vol.Coerce(float), vol.Range(min=1, max=2160))
 
 def _serialise_times(data: dict) -> dict:
     """Convert selector time objects to config-entry-safe strings."""
-    for key in (CONF_QUIET_START, CONF_QUIET_END, CONF_PREFERRED_TIME):
+    for key in (
+        CONF_QUIET_START,
+        CONF_QUIET_END,
+        CONF_PREFERRED_TIME,
+        CONF_BENCH_PREFERRED_TIME,
+        CONF_FRIDGE_PREFERRED_TIME,
+    ):
         if hasattr(data.get(key), "isoformat"):
             data[key] = data[key].isoformat()
     return data
@@ -94,11 +104,27 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
                 default=defaults.get(CONF_PREFERRED_TIME_ENABLED, False),
             ): selector.BooleanSelector(),
             vol.Required(
-                CONF_PREFERRED_TIME,
+                CONF_BENCH_PREFERRED_TIME,
                 default=defaults.get(
-                    CONF_PREFERRED_TIME, DEFAULT_PREFERRED_TIME
+                    CONF_BENCH_PREFERRED_TIME,
+                    defaults.get(CONF_PREFERRED_TIME, DEFAULT_PREFERRED_TIME),
                 ),
             ): selector.TimeSelector(),
+            vol.Required(
+                CONF_FRIDGE_PREFERRED_TIME,
+                default=defaults.get(
+                    CONF_FRIDGE_PREFERRED_TIME,
+                    defaults.get(CONF_PREFERRED_TIME, DEFAULT_PREFERRED_TIME),
+                ),
+            ): selector.TimeSelector(),
+            vol.Optional(
+                CONF_HOLIDAY_MODE_ENTITY,
+                default=defaults.get(
+                    CONF_HOLIDAY_MODE_ENTITY, DEFAULT_HOLIDAY_MODE_ENTITY
+                ),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor")
+            ),
             vol.Required(
                 CONF_DUE_SOON,
                 default=defaults.get(CONF_DUE_SOON, DEFAULT_DUE_SOON),

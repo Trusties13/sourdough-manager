@@ -44,6 +44,19 @@ def test_due_and_due_soon_boundaries():
     ) == (True, False)
 
 
+def test_due_today_or_overdue_uses_local_dates():
+    due = datetime(2026, 7, 27, 9, tzinfo=UTC)
+    assert not models.due_today_or_overdue(
+        due, datetime(2026, 7, 26, 23, tzinfo=UTC)
+    )
+    assert models.due_today_or_overdue(
+        due, datetime(2026, 7, 27, 1, tzinfo=UTC)
+    )
+    assert models.due_today_or_overdue(
+        due, datetime(2026, 7, 28, 1, tzinfo=UTC)
+    )
+
+
 def test_overdue_hours():
     due = datetime(2026, 7, 27, 9, tzinfo=UTC)
     assert models.overdue_hours(due, datetime(2026, 7, 27, 17, tzinfo=UTC)) == 8
@@ -144,7 +157,7 @@ def test_migrates_existing_active_cycle_and_location():
         "bench",
     )
     assert migrated == {
-        "schema_version": 5,
+        "schema_version": 6,
         "last_fed": "2026-07-25T09:00:00+00:00",
         "location": "refrigerator",
         "location_changed_at": None,
@@ -161,6 +174,8 @@ def test_migrates_existing_active_cycle_and_location():
         "feed_history": [{"unused": True}],
         "last_event_type": None,
         "last_event_at": None,
+        "missed_feed_count": 0,
+        "missed_deadline_for": None,
     }
 
 

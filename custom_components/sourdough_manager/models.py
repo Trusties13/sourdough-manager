@@ -66,6 +66,19 @@ def schedule_state(
     return is_due, is_due_soon
 
 
+def due_today_or_overdue(
+    due: datetime | None,
+    now: datetime | None = None,
+) -> bool:
+    """Return whether a deadline is on or before the current local date."""
+    if due is None:
+        return False
+    now = now or datetime.now(due.tzinfo or UTC)
+    if due.tzinfo is not None:
+        now = now.astimezone(due.tzinfo)
+    return due.date() <= now.date()
+
+
 def overdue_hours(due: datetime | None, now: datetime | None = None) -> float:
     """Return hours overdue, clamped at zero."""
     if due is None:
@@ -191,7 +204,7 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         last_fed = cycle.get("fed_at")
     location = old.get("location", default_location)
     return {
-        "schema_version": 5,
+        "schema_version": 6,
         "last_fed": last_fed,
         "location": location,
         "location_changed_at": old.get("location_changed_at"),
@@ -208,4 +221,6 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         "feed_history": list(old.get("feed_history", []))[-20:],
         "last_event_type": old.get("last_event_type"),
         "last_event_at": old.get("last_event_at"),
+        "missed_feed_count": int(old.get("missed_feed_count", 0)),
+        "missed_deadline_for": old.get("missed_deadline_for"),
     }

@@ -40,6 +40,8 @@ class StarterStore:
                 "feed_history": [],
                 "last_event_type": None,
                 "last_event_at": None,
+                "missed_feed_count": 0,
+                "missed_deadline_for": None,
             }
         else:
             data = migrate_storage(stored, default_location)
