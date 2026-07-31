@@ -17,6 +17,13 @@ SERVICE_SCHEMA = vol.Schema(
     }
 )
 
+SET_NEXT_DUE_SCHEMA = vol.Schema(
+    {
+        vol.Required("config_entry_id"): cv.string,
+        vol.Required("due_at"): cv.datetime,
+    }
+)
+
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Register the retrospective feed action."""
@@ -29,6 +36,19 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 
     hass.services.async_register(
         DOMAIN, "record_feed", record_feed, schema=SERVICE_SCHEMA
+    )
+
+    async def set_next_feed_due(call: ServiceCall) -> None:
+        entry = hass.config_entries.async_get_entry(call.data["config_entry_id"])
+        if entry is None or entry.domain != DOMAIN or entry.runtime_data is None:
+            raise ValueError("Unknown Sourdough Manager config entry")
+        await entry.runtime_data.set_next_feed_due(call.data["due_at"])
+
+    hass.services.async_register(
+        DOMAIN,
+        "set_next_feed_due",
+        set_next_feed_due,
+        schema=SET_NEXT_DUE_SCHEMA,
     )
     return True
 

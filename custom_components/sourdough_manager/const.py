@@ -6,14 +6,16 @@ PLATFORMS = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
+    Platform.CALENDAR,
     Platform.DATE,
+    Platform.EVENT,
     Platform.SELECT,
     Platform.SWITCH,
     Platform.TIME,
 ]
 
 STORAGE_VERSION = 2
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 STORAGE_KEY_PREFIX = f"{DOMAIN}.starter"
 
 CONF_STARTER_NAME = "starter_name"
@@ -39,6 +41,8 @@ CONF_LIGHT_COLOR = "light_color"
 CONF_LIGHT_FLASH_COUNT = "light_flash_count"
 CONF_LIGHT_PULSE_SECONDS = "light_pulse_seconds"
 CONF_LIGHT_GAP_SECONDS = "light_gap_seconds"
+CONF_PREFERRED_TIME_ENABLED = "preferred_time_enabled"
+CONF_PREFERRED_TIME = "preferred_feed_time"
 
 LOCATION_BENCH = "bench"
 LOCATION_FRIDGE = "refrigerator"
@@ -55,16 +59,27 @@ DEFAULT_LIGHT_COLOR = [255, 0, 0]
 DEFAULT_LIGHT_FLASH_COUNT = 3
 DEFAULT_LIGHT_PULSE_SECONDS = 1.0
 DEFAULT_LIGHT_GAP_SECONDS = 0.25
+DEFAULT_PREFERRED_TIME = "09:00:00"
 DEFAULT_QUIET_START = "22:00:00"
 DEFAULT_QUIET_END = "07:00:00"
 DEFAULT_SNOOZE_HOURS = "1"
 SNOOZE_OPTIONS = ("1", "3", "12")
+DELAY_OPTIONS = ("1", "3", "tomorrow_morning")
 DUPLICATE_FEED_SECONDS = 10
+MAX_FEED_HISTORY = 20
 
 EVENT_FEED_RECORDED = f"{DOMAIN}_feed_recorded"
 EVENT_DUE_SOON = f"{DOMAIN}_feed_due_soon"
 EVENT_OVERDUE = f"{DOMAIN}_feed_overdue"
 EVENT_LOCATION_CHANGED = f"{DOMAIN}_location_changed"
+EVENT_DEADLINE_DELAYED = f"{DOMAIN}_deadline_delayed"
+EVENT_TYPES = (
+    "feed_recorded",
+    "due_soon",
+    "overdue",
+    "location_changed",
+    "deadline_delayed",
+)
 
 OBSOLETE_ENTITY_KEYS = (
     "status",

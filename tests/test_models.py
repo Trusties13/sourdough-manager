@@ -24,6 +24,13 @@ def test_next_feed_uses_location_frequency():
     )
 
 
+def test_aligns_deadline_to_preferred_local_time():
+    due = datetime(2026, 7, 27, 14, 37, tzinfo=UTC)
+    assert models.align_deadline_to_preferred_time(
+        due, "09:00:00"
+    ) == datetime(2026, 7, 27, 9, tzinfo=UTC)
+
+
 def test_due_and_due_soon_boundaries():
     due = datetime(2026, 7, 27, 9, tzinfo=UTC)
     assert models.schedule_state(
@@ -137,7 +144,7 @@ def test_migrates_existing_active_cycle_and_location():
         "bench",
     )
     assert migrated == {
-        "schema_version": 4,
+        "schema_version": 5,
         "last_fed": "2026-07-25T09:00:00+00:00",
         "location": "refrigerator",
         "location_changed_at": None,
@@ -149,4 +156,19 @@ def test_migrates_existing_active_cycle_and_location():
         "last_audio_reminder_at": None,
         "last_light_reminder_at": None,
         "reminders_enabled": True,
+        "deadline_override": None,
+        "delay_option": "1",
+        "feed_history": [{"unused": True}],
+        "last_event_type": None,
+        "last_event_at": None,
     }
+
+
+def test_migration_retains_only_twenty_feed_records():
+    history = [
+        {"fed_at": f"2026-07-{day:02d}T09:00:00+00:00", "location": "bench"}
+        for day in range(1, 26)
+    ]
+    migrated = models.migrate_storage({"feed_history": history}, "bench")
+    assert len(migrated["feed_history"]) == 20
+    assert migrated["feed_history"][0] == history[5]

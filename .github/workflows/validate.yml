@@ -26,6 +26,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - run: pip install homeassistant pytest ruff
+      - run: pip install homeassistant pytest ruff pyyaml
       - run: ruff check .
       - run: pytest
+      - name: Validate JSON and YAML examples
+        run: |
+          python -m json.tool custom_components/sourdough_manager/manifest.json >/dev/null
+          python -m json.tool custom_components/sourdough_manager/strings.json >/dev/null
+          python -m json.tool custom_components/sourdough_manager/translations/en.json >/dev/null
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          for path in Path("examples").glob("*.yaml"):
+              yaml.safe_load(path.read_text())
+          PY

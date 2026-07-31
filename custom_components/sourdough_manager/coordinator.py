@@ -9,6 +9,8 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
@@ -32,6 +34,8 @@ from .const import (
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
+    CONF_PREFERRED_TIME,
+    CONF_PREFERRED_TIME_ENABLED,
     CONF_QUIET_END,
     CONF_QUIET_HOURS_ENABLED,
     CONF_QUIET_START,
@@ -46,22 +50,27 @@ from .const import (
     DEFAULT_LIGHT_GAP_SECONDS,
     DEFAULT_LIGHT_PULSE_SECONDS,
     DEFAULT_OVERDUE_INTERVAL,
+    DEFAULT_PREFERRED_TIME,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DOMAIN,
     DUPLICATE_FEED_SECONDS,
+    EVENT_DEADLINE_DELAYED,
     EVENT_DUE_SOON,
     EVENT_FEED_RECORDED,
     EVENT_LOCATION_CHANGED,
     EVENT_OVERDUE,
     LOCATION_BENCH,
+    MAX_FEED_HISTORY,
 )
 from .models import (
+    align_deadline_to_preferred_time,
     audio_reminder_due,
     human_duration,
     light_restore_data,
     next_feed_due,
     overdue_notification_copy,
+    parse_clock,
     parse_datetime,
     quiet_hours_active,
     schedule_state,
@@ -86,6 +95,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.store = StarterStore(hass, entry.entry_id)
         self._was_due = False
         self._was_due_soon = False
+        self._event_listeners: list[Any] = []
 
     def option(self, key: str, default: Any) -> Any:
         """Return an option, falling back to config data."""
@@ -100,15 +110,29 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.async_set_updated_data(data)
         self._was_due = False
         self._was_due_soon = False
+        self._update_configuration_issue()
 
     def next_due(self) -> datetime | None:
         """Return the current deadline."""
-        return next_feed_due(
+        override = parse_datetime(self.data.get("deadline_override"))
+        if override is not None:
+            return override
+        due = next_feed_due(
             parse_datetime(self.data.get("last_fed")),
             self.data["location"],
             float(self.option(CONF_BENCH_INTERVAL, DEFAULT_BENCH_INTERVAL)),
             float(self.option(CONF_FRIDGE_INTERVAL, DEFAULT_FRIDGE_INTERVAL)),
         )
+        if due is None or not bool(
+            self.option(CONF_PREFERRED_TIME_ENABLED, False)
+        ):
+            return due
+        local_due = dt_util.as_local(due)
+        aligned = align_deadline_to_preferred_time(
+            local_due,
+            self.option(CONF_PREFERRED_TIME, DEFAULT_PREFERRED_TIME),
+        )
+        return dt_util.as_utc(aligned) if aligned else None
 
     def schedule_state(self) -> tuple[bool, bool]:
         """Return current due and due-soon states."""
@@ -119,6 +143,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Refresh time-dependent entities and fire threshold events once."""
+        self._update_configuration_issue()
         is_due, is_due_soon = self.schedule_state()
         reminder_sent = False
         if is_due_soon and not self._was_due_soon:
@@ -139,6 +164,48 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._was_due = is_due
         self._was_due_soon = is_due_soon
         return self.data
+
+    def invalid_targets(self) -> list[str]:
+        """Return configured entities that no longer exist."""
+        registry = er.async_get(self.hass)
+        configured: list[str] = []
+        for key in (
+            CONF_NOTIFICATION_TARGETS,
+            CONF_AUDIO_TARGETS,
+            CONF_LIGHT_TARGETS,
+        ):
+            value = self.option(key, [])
+            configured.extend([value] if isinstance(value, str) else value)
+        tts = self.option(CONF_AUDIO_TTS_ENTITY, None)
+        if tts:
+            configured.append(tts)
+        return sorted(
+            {
+                entity_id
+                for entity_id in configured
+                if registry.async_get(entity_id) is None
+            }
+        )
+
+    def _update_configuration_issue(self) -> None:
+        """Create or clear a repair issue for deleted target entities."""
+        issue_id = f"invalid_targets_{self.entry.entry_id}"
+        invalid = self.invalid_targets()
+        if not invalid:
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            return
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            issue_id,
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="invalid_targets",
+            translation_placeholders={
+                "starter": self.entry.title,
+                "targets": ", ".join(invalid),
+            },
+        )
 
     async def _async_send_reminder(self) -> bool:
         """Send at most one configured notification for the current deadline."""
@@ -572,15 +639,38 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _fire(self, event_type: str) -> None:
         """Fire an automation-friendly event."""
+        event_data = {
+            "config_entry_id": self.entry.entry_id,
+            "last_fed": self.data.get("last_fed"),
+            "next_feed_due": self.next_due().isoformat() if self.next_due() else None,
+            "location": self.data["location"],
+        }
         self.hass.bus.async_fire(
             event_type,
-            {
-                "config_entry_id": self.entry.entry_id,
-                "last_fed": self.data.get("last_fed"),
-                "next_feed_due": self.next_due().isoformat() if self.next_due() else None,
-                "location": self.data["location"],
-            },
+            event_data,
         )
+        short_type = {
+            EVENT_FEED_RECORDED: "feed_recorded",
+            EVENT_DUE_SOON: "due_soon",
+            EVENT_OVERDUE: "overdue",
+            EVENT_LOCATION_CHANGED: "location_changed",
+            EVENT_DEADLINE_DELAYED: "deadline_delayed",
+        }[event_type]
+        now = dt_util.utcnow().isoformat()
+        self.data["last_event_type"] = short_type
+        self.data["last_event_at"] = now
+        for listener in self._event_listeners:
+            listener(short_type, event_data)
+
+    def add_event_listener(self, listener) -> Any:
+        """Subscribe an event entity to starter events."""
+        self._event_listeners.append(listener)
+
+        def remove_listener() -> None:
+            if listener in self._event_listeners:
+                self._event_listeners.remove(listener)
+
+        return remove_listener
 
     async def record_feed(
         self,
@@ -601,9 +691,18 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         fed_at = fed_at or now
         if fed_at.tzinfo is None:
             fed_at = fed_at.replace(tzinfo=UTC)
+        history = list(self.data.get("feed_history", []))
+        history.append(
+            {
+                "fed_at": fed_at.isoformat(),
+                "location": self.data["location"],
+            }
+        )
         data = {
             **self.data,
             "last_fed": fed_at.isoformat(),
+            "deadline_override": None,
+            "feed_history": history[-MAX_FEED_HISTORY:],
             "last_reminder_for": None,
             "last_overdue_reminder_at": None,
             "snoozed_until": None,
@@ -630,6 +729,50 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     record_reminder=False,
                 )
         return True
+
+    async def set_delay_option(self, option: str) -> None:
+        """Select the one-off delay used by the delay button."""
+        data = {**self.data, "delay_option": option}
+        await self.store.save(data)
+        self.async_set_updated_data(data)
+
+    async def delay_next_feed(self) -> None:
+        """Move the current deadline by the selected one-off delay."""
+        current_due = self.next_due()
+        if current_due is None:
+            raise HomeAssistantError("Record a feed before delaying its deadline")
+        option = self.data.get("delay_option", "1")
+        if option == "tomorrow_morning":
+            local_now = dt_util.now()
+            preferred = self.option(CONF_PREFERRED_TIME, DEFAULT_PREFERRED_TIME)
+            clock = parse_clock(preferred)
+            delayed_local = datetime.combine(
+                local_now.date() + timedelta(days=1), clock
+            ).replace(tzinfo=dt_util.get_default_time_zone())
+            delayed = dt_util.as_utc(delayed_local)
+        else:
+            delayed = current_due + timedelta(hours=float(option))
+        await self.set_next_feed_due(delayed)
+
+    async def set_next_feed_due(self, due_at: datetime) -> None:
+        """Set a one-off explicit next-feed deadline."""
+        if due_at.tzinfo is None:
+            due_at = due_at.replace(tzinfo=dt_util.get_default_time_zone())
+        due_at = dt_util.as_utc(due_at)
+        data = {
+            **self.data,
+            "deadline_override": due_at.isoformat(),
+            "last_reminder_for": None,
+            "last_overdue_reminder_at": None,
+            "snoozed_until": None,
+            "last_audio_reminder_at": None,
+            "last_light_reminder_at": None,
+        }
+        await self.store.save(data)
+        self._was_due = False
+        self._was_due_soon = False
+        self.async_set_updated_data(data)
+        self._fire(EVENT_DEADLINE_DELAYED)
 
     async def _async_clear_overdue_notification(self) -> None:
         """Remove this starter's tagged overdue Companion App alert."""
@@ -680,6 +823,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             **self.data,
             "location": location,
             "location_changed_at": dt_util.utcnow().isoformat(),
+            "deadline_override": None,
         }
         await self.store.save(data)
         self.async_set_updated_data(data)
