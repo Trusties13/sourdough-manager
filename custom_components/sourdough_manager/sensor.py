@@ -12,9 +12,11 @@ from .const import (
     CONF_AUDIO_TTS_ENTITY,
     CONF_AUDIO_VOLUME,
     CONF_BENCH_INTERVAL,
+    CONF_BENCH_PREFERRED_TIME,
     CONF_CONFIRM_FEED,
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
+    CONF_FRIDGE_PREFERRED_TIME,
     CONF_LIGHT_COLOR,
     CONF_LIGHT_FLASH_COUNT,
     CONF_LIGHT_GAP_SECONDS,
@@ -41,6 +43,7 @@ from .const import (
     DEFAULT_PREFERRED_TIME,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
+    LOCATION_FRIDGE,
 )
 from .entity import StarterEntity
 from .models import human_clock_range, human_duration, overdue_hours, parse_datetime
@@ -93,6 +96,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             LastLightReminderSensor(entry.runtime_data),
             PreferredFeedTimeSensor(entry.runtime_data),
             FeedHistorySensor(entry.runtime_data),
+            ScheduleStatusSensor(entry.runtime_data),
+            MissedFeedCountSensor(entry.runtime_data),
         ]
     )
 
@@ -149,10 +154,33 @@ class PreferredFeedTimeSensor(StarterEntity, SensorEntity):
             self.coordinator.option(CONF_PREFERRED_TIME_ENABLED, False)
         ):
             return "Disabled"
+        option_key = (
+            CONF_FRIDGE_PREFERRED_TIME
+            if self.coordinator.data["location"] == LOCATION_FRIDGE
+            else CONF_BENCH_PREFERRED_TIME
+        )
         value = self.coordinator.option(
-            CONF_PREFERRED_TIME, DEFAULT_PREFERRED_TIME
+            option_key,
+            self.coordinator.option(CONF_PREFERRED_TIME, DEFAULT_PREFERRED_TIME),
         )
         return human_clock_range(value, value).split(" to ", 1)[0]
+
+    @property
+    def extra_state_attributes(self):
+        fallback = self.coordinator.option(
+            CONF_PREFERRED_TIME, DEFAULT_PREFERRED_TIME
+        )
+        return {
+            "enabled": bool(
+                self.coordinator.option(CONF_PREFERRED_TIME_ENABLED, False)
+            ),
+            "bench": self.coordinator.option(
+                CONF_BENCH_PREFERRED_TIME, fallback
+            ),
+            "refrigerator": self.coordinator.option(
+                CONF_FRIDGE_PREFERRED_TIME, fallback
+            ),
+        }
 
 
 class FeedHistorySensor(StarterEntity, SensorEntity):
@@ -171,6 +199,41 @@ class FeedHistorySensor(StarterEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         return {"feeds": list(self.coordinator.data.get("feed_history", []))}
+
+
+class ScheduleStatusSensor(StarterEntity, SensorEntity):
+    """Expose one simple state for dashboards and automations."""
+
+    _attr_translation_key = "schedule_status"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = [
+        "on_schedule",
+        "due_today",
+        "due_soon",
+        "overdue",
+        "holiday",
+    ]
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "schedule_status")
+
+    @property
+    def native_value(self):
+        return self.coordinator.schedule_status()
+
+
+class MissedFeedCountSensor(StarterEntity, SensorEntity):
+    """Count deadlines that became overdue."""
+
+    _attr_translation_key = "missed_feed_count"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "missed_feed_count")
+
+    @property
+    def native_value(self):
+        return int(self.coordinator.data.get("missed_feed_count", 0))
 
 
 class DurationSettingSensor(StarterEntity, SensorEntity):

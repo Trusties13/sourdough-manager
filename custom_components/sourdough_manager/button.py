@@ -13,6 +13,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             TestPushReminderButton(entry.runtime_data),
             TestAudioReminderButton(entry.runtime_data),
             DelayNextFeedButton(entry.runtime_data),
+            FeedAndRefrigerateButton(entry.runtime_data),
         ]
     )
 
@@ -73,5 +74,21 @@ class DelayNextFeedButton(StarterEntity, ButtonEntity):
     def __init__(self, coordinator):
         super().__init__(coordinator, "delay_next_feed")
 
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.delay_available()
+
     async def async_press(self):
         await self.coordinator.delay_next_feed()
+
+
+class FeedAndRefrigerateButton(StarterEntity, ButtonEntity):
+    """Record a feed and move the starter to the refrigerator."""
+
+    _attr_translation_key = "feed_and_refrigerate"
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "feed_and_refrigerate")
+
+    async def async_press(self):
+        await self.coordinator.record_feed_in_fridge()

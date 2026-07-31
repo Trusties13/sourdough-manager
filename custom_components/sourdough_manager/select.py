@@ -70,5 +70,9 @@ class DelayDurationSelect(StarterEntity, SelectEntity):
     def current_option(self):
         return self.coordinator.data.get("delay_option", "1")
 
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.delay_available()
+
     async def async_select_option(self, option: str) -> None:
         await self.coordinator.set_delay_option(option)

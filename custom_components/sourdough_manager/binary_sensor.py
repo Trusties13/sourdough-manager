@@ -10,6 +10,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         [
             FeedDueSensor(entry.runtime_data),
             FeedDueSoonSensor(entry.runtime_data),
+            FeedDueTodaySensor(entry.runtime_data),
             ConfigurationHealthSensor(entry.runtime_data),
         ]
     )
@@ -39,6 +40,19 @@ class FeedDueSoonSensor(StarterEntity, BinarySensorEntity):
     @property
     def is_on(self):
         return self.coordinator.schedule_state()[1]
+
+
+class FeedDueTodaySensor(StarterEntity, BinarySensorEntity):
+    """Whether the current deadline falls on the local date."""
+
+    _attr_translation_key = "feed_due_today"
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "feed_due_today")
+
+    @property
+    def is_on(self):
+        return self.coordinator.due_today()
 
 
 class ConfigurationHealthSensor(StarterEntity, BinarySensorEntity):
