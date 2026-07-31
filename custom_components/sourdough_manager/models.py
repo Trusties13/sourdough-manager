@@ -36,6 +36,22 @@ def next_feed_due(
     return last_fed + timedelta(hours=interval)
 
 
+def align_deadline_to_preferred_time(
+    due: datetime | None,
+    preferred: str | time,
+) -> datetime | None:
+    """Align a deadline to a preferred clock time in its own timezone."""
+    if due is None:
+        return None
+    clock = parse_clock(preferred)
+    return due.replace(
+        hour=clock.hour,
+        minute=clock.minute,
+        second=0,
+        microsecond=0,
+    )
+
+
 def schedule_state(
     due: datetime | None,
     due_soon_hours: float,
@@ -175,7 +191,7 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         last_fed = cycle.get("fed_at")
     location = old.get("location", default_location)
     return {
-        "schema_version": 4,
+        "schema_version": 5,
         "last_fed": last_fed,
         "location": location,
         "location_changed_at": old.get("location_changed_at"),
@@ -187,4 +203,9 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         "last_audio_reminder_at": old.get("last_audio_reminder_at"),
         "last_light_reminder_at": old.get("last_light_reminder_at"),
         "reminders_enabled": old.get("reminders_enabled", True),
+        "deadline_override": old.get("deadline_override"),
+        "delay_option": old.get("delay_option", "1"),
+        "feed_history": list(old.get("feed_history", []))[-20:],
+        "last_event_type": old.get("last_event_type"),
+        "last_event_at": old.get("last_event_at"),
     }

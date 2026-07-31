@@ -22,6 +22,8 @@ from .const import (
     CONF_LIGHT_TARGETS,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
+    CONF_PREFERRED_TIME,
+    CONF_PREFERRED_TIME_ENABLED,
     CONF_QUIET_END,
     CONF_QUIET_HOURS_ENABLED,
     CONF_QUIET_START,
@@ -36,6 +38,7 @@ from .const import (
     DEFAULT_LIGHT_GAP_SECONDS,
     DEFAULT_LIGHT_PULSE_SECONDS,
     DEFAULT_OVERDUE_INTERVAL,
+    DEFAULT_PREFERRED_TIME,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
 )
@@ -88,6 +91,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             LightColorSensor(entry.runtime_data),
             LightTimingSensor(entry.runtime_data),
             LastLightReminderSensor(entry.runtime_data),
+            PreferredFeedTimeSensor(entry.runtime_data),
+            FeedHistorySensor(entry.runtime_data),
         ]
     )
 
@@ -125,7 +130,47 @@ class NextFeedDueSensor(StarterEntity, SensorEntity):
             "overdue_hours": overdue_hours(self.coordinator.next_due()),
             "location": self.coordinator.data["location"],
             "location_changed_at": self.coordinator.data.get("location_changed_at"),
+            "one_off_override": self.coordinator.data.get("deadline_override"),
         }
+
+
+class PreferredFeedTimeSensor(StarterEntity, SensorEntity):
+    """Display the configured preferred feeding time."""
+
+    _attr_translation_key = "preferred_feed_time"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "preferred_feed_time")
+
+    @property
+    def native_value(self):
+        if not bool(
+            self.coordinator.option(CONF_PREFERRED_TIME_ENABLED, False)
+        ):
+            return "Disabled"
+        value = self.coordinator.option(
+            CONF_PREFERRED_TIME, DEFAULT_PREFERRED_TIME
+        )
+        return human_clock_range(value, value).split(" to ", 1)[0]
+
+
+class FeedHistorySensor(StarterEntity, SensorEntity):
+    """Expose a compact bounded feeding history."""
+
+    _attr_translation_key = "feed_history"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "feed_history")
+
+    @property
+    def native_value(self):
+        return len(self.coordinator.data.get("feed_history", []))
+
+    @property
+    def extra_state_attributes(self):
+        return {"feeds": list(self.coordinator.data.get("feed_history", []))}
 
 
 class DurationSettingSensor(StarterEntity, SensorEntity):

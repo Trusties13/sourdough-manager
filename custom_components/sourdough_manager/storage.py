@@ -35,6 +35,11 @@ class StarterStore:
                 "last_audio_reminder_at": None,
                 "last_light_reminder_at": None,
                 "reminders_enabled": True,
+                "deadline_override": None,
+                "delay_option": "1",
+                "feed_history": [],
+                "last_event_type": None,
+                "last_event_at": None,
             }
         else:
             data = migrate_storage(stored, default_location)

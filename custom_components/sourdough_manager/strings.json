@@ -11,6 +11,8 @@
           "last_fed": "Last fed",
           "bench_interval_hours": "Bench feed frequency",
           "fridge_interval_hours": "Fridge feed frequency",
+          "preferred_time_enabled": "Use a preferred feeding time",
+          "preferred_feed_time": "Preferred feeding time",
           "due_soon_hours": "Reminder lead time",
           "notification_targets": "Notification targets",
           "overdue_interval_minutes": "Overdue reminder interval",
@@ -34,6 +36,8 @@
           "last_fed": "Optional. Leave empty if the starter has not been fed yet.",
           "bench_interval_hours": "Hours between feeds while stored on the bench. Default: 48.",
           "fridge_interval_hours": "Hours between feeds while refrigerated. Default: 168.",
+          "preferred_time_enabled": "Align interval-based deadlines to a consistent local clock time.",
+          "preferred_feed_time": "The local time used when preferred feeding time is enabled.",
           "due_soon_hours": "How many hours before the deadline the first reminder is sent. Use 0 to disable the early reminder.",
           "notification_targets": "Choose one or more notification entities.",
           "overdue_interval_minutes": "Minutes between overdue reminders. Minimum: 5.",
@@ -63,6 +67,8 @@
         "data": {
           "bench_interval_hours": "Bench feed frequency",
           "fridge_interval_hours": "Fridge feed frequency",
+          "preferred_time_enabled": "Use a preferred feeding time",
+          "preferred_feed_time": "Preferred feeding time",
           "due_soon_hours": "Reminder lead time",
           "notification_targets": "Notification targets",
           "overdue_interval_minutes": "Overdue reminder interval",
@@ -85,6 +91,8 @@
         "data_description": {
           "bench_interval_hours": "Hours between feeds while stored on the bench.",
           "fridge_interval_hours": "Hours between feeds while refrigerated.",
+          "preferred_time_enabled": "Align interval-based deadlines to a consistent local clock time.",
+          "preferred_feed_time": "The local time used when preferred feeding time is enabled.",
           "due_soon_hours": "Hours before feeding is due to send the first reminder. Use 0 to disable the early reminder.",
           "notification_targets": "Choose one or more notification entities.",
           "overdue_interval_minutes": "Minutes between overdue reminders. Minimum: 5.",
@@ -179,6 +187,12 @@
       },
       "light_timing": {
         "name": "Light reminder timing"
+      },
+      "preferred_feed_time": {
+        "name": "Preferred feeding time"
+      },
+      "feed_history": {
+        "name": "Feed history"
       }
     },
     "binary_sensor": {
@@ -187,6 +201,9 @@
       },
       "feed_due_soon": {
         "name": "Feed due soon"
+      },
+      "configuration_problem": {
+        "name": "Configuration problem"
       }
     },
     "button": {
@@ -201,6 +218,9 @@
       },
       "test_audio_reminder": {
         "name": "Test audio reminder"
+      },
+      "delay_next_feed": {
+        "name": "Delay next feed"
       }
     },
     "date": {
@@ -228,12 +248,43 @@
           "3": "3 hours",
           "12": "12 hours"
         }
+      },
+      "delay_duration": {
+        "name": "Delay duration",
+        "state": {
+          "1": "1 hour",
+          "3": "3 hours",
+          "tomorrow_morning": "Tomorrow morning"
+        }
       }
     },
     "switch": {
       "reminders": {
         "name": "Reminders"
       }
+    },
+    "calendar": {
+      "feeding_calendar": {
+        "name": "Feeding calendar"
+      }
+    },
+    "event": {
+      "starter_event": {
+        "name": "Starter activity",
+        "state": {
+          "feed_recorded": "Feed recorded",
+          "due_soon": "Feeding due soon",
+          "overdue": "Feeding overdue",
+          "location_changed": "Storage location changed",
+          "deadline_delayed": "Deadline delayed"
+        }
+      }
+    }
+  },
+  "issues": {
+    "invalid_targets": {
+      "title": "{starter} has missing reminder targets",
+      "description": "These configured entities no longer exist: {targets}. Open Sourdough Manager options and select valid replacement targets."
     }
   }
 }

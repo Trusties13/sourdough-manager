@@ -12,6 +12,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             SnoozeButton(entry.runtime_data),
             TestPushReminderButton(entry.runtime_data),
             TestAudioReminderButton(entry.runtime_data),
+            DelayNextFeedButton(entry.runtime_data),
         ]
     )
 
@@ -62,3 +63,15 @@ class TestAudioReminderButton(StarterEntity, ButtonEntity):
 
     async def async_press(self):
         await self.coordinator.test_audio_reminder()
+
+
+class DelayNextFeedButton(StarterEntity, ButtonEntity):
+    """Apply the selected one-off deadline delay."""
+
+    _attr_translation_key = "delay_next_feed"
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "delay_next_feed")
+
+    async def async_press(self):
+        await self.coordinator.delay_next_feed()

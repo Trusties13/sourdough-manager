@@ -15,3 +15,20 @@ record_feed:
       required: false
       selector:
         datetime:
+
+set_next_feed_due:
+  name: Set next feed due
+  description: Set a one-off next feeding deadline without changing the last-fed time.
+  fields:
+    config_entry_id:
+      name: Starter
+      description: The Sourdough Manager configuration entry ID.
+      required: true
+      selector:
+        text:
+    due_at:
+      name: Due at
+      description: The custom next feeding deadline.
+      required: true
+      selector:
+        datetime:

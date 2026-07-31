@@ -1,5 +1,20 @@
-# This example uses the entity prefix generated for the Kitchen / Main Starter device.
-      **Next feed:** {{ as_timestamp(next_feed) | timestamp_custom('%A, %-d %B at %-I:%M %p', true) }}
+# Replace `main_starter` with the entity prefix shown on your starter device.
+type: vertical-stack
+cards:
+  - type: markdown
+    content: |
+      ## 🫙 Main Starter
+      {% if is_state('binary_sensor.main_starter_feed_due', 'on') %}
+        🔴 **Feeding is overdue**
+      {% elif is_state('binary_sensor.main_starter_feed_due_soon', 'on') %}
+        🟠 **Feeding is due soon**
+      {% else %}
+        🟢 **Starter is on schedule**
+      {% endif %}
+
+      {% set due = states('sensor.main_starter_next_feed_due') %}
+      {% if due not in ['unknown', 'unavailable', 'none'] %}
+        **Next feed:** {{ as_timestamp(due) | timestamp_custom('%A, %-d %B at %-I:%M %p', true) }}
       {% endif %}
 
   - type: conditional
@@ -15,8 +30,6 @@
 
   - type: conditional
     conditions:
-      - entity: binary_sensor.main_starter_feed_due
-        state: "off"
       - entity: binary_sensor.main_starter_feed_due_soon
         state: "on"
     card:
@@ -42,7 +55,7 @@
         entity: select.main_starter_storage_location
         name: Storage
       - type: tile
-        entity: switch.kitchen_main_starter_reminders
+        entity: switch.main_starter_reminders
         name: Reminders
         icon: mdi:bell-ring-outline
 
@@ -54,37 +67,51 @@
         entity: button.main_starter_fed_now
         name: Fed now
         icon: mdi:check-circle
-        show_state: false
         tap_action:
-          action: call-service
-          service: button.press
+          action: perform-action
+          perform_action: button.press
           target:
-            entity_id: button.kitchen_main_starter_fed_now
+            entity_id: button.main_starter_fed_now
       - type: button
-        entity: button.kitchen_main_starter_snooze_reminders
+        entity: button.main_starter_snooze_reminders
         name: Snooze
         icon: mdi:bell-sleep
-        show_state: false
         tap_action:
-          action: call-service
-          service: button.press
+          action: perform-action
+          perform_action: button.press
           target:
-            entity_id: button.kitchen_main_starter_snooze_reminders
+            entity_id: button.main_starter_snooze_reminders
+
+  - type: entities
+    title: Adjust next feed
+    show_header_toggle: false
+    entities:
+      - entity: select.main_starter_delay_duration
+        name: Delay by
+      - entity: button.main_starter_delay_next_feed
+        name: Apply one-off delay
+
+  - type: calendar
+    entities:
+      - calendar.main_starter_feeding_calendar
+    initial_view: listWeek
 
   - type: entities
     title: Reminder controls
     show_header_toggle: false
     entities:
-      - entity: switch.kitchen_main_starter_reminders
-        name: Scheduled reminders
-      - entity: select.kitchen_main_starter_snooze_duration
+      - entity: select.main_starter_snooze_duration
         name: Snooze duration
-      - entity: button.kitchen_main_starter_test_push_reminder
+      - entity: button.main_starter_test_push_reminder
         name: Test push and light
-      - entity: button.kitchen_main_starter_test_audio_reminder
+      - entity: button.main_starter_test_audio_reminder
         name: Test audio and light
 
   - type: entities
     title: Correct a late entry
     show_header_toggle: false
+    entities:
+      - entity: date.main_starter_last_fed_date
+        name: Last fed date
+      - entity: time.main_starter_last_fed_time
         name: Last fed time

@@ -1,7 +1,7 @@
 """Storage location control."""
 from homeassistant.components.select import SelectEntity
 
-from .const import LOCATION_BENCH, LOCATIONS, SNOOZE_OPTIONS
+from .const import DELAY_OPTIONS, LOCATION_BENCH, LOCATIONS, SNOOZE_OPTIONS
 from .entity import StarterEntity
 
 
@@ -11,6 +11,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         [
             StorageLocationSelect(entry.runtime_data),
             SnoozeDurationSelect(entry.runtime_data),
+            DelayDurationSelect(entry.runtime_data),
         ]
     )
 
@@ -54,3 +55,20 @@ class SnoozeDurationSelect(StarterEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         await self.coordinator.set_snooze_duration(option)
+
+
+class DelayDurationSelect(StarterEntity, SelectEntity):
+    """Select the one-off next-feed delay."""
+
+    _attr_translation_key = "delay_duration"
+    _attr_options = list(DELAY_OPTIONS)
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "delay_duration")
+
+    @property
+    def current_option(self):
+        return self.coordinator.data.get("delay_option", "1")
+
+    async def async_select_option(self, option: str) -> None:
+        await self.coordinator.set_delay_option(option)

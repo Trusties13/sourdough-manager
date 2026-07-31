@@ -26,6 +26,8 @@ from .const import (
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
     CONF_OVERDUE_INTERVAL,
+    CONF_PREFERRED_TIME,
+    CONF_PREFERRED_TIME_ENABLED,
     CONF_QUIET_END,
     CONF_QUIET_HOURS_ENABLED,
     CONF_QUIET_START,
@@ -41,6 +43,7 @@ from .const import (
     DEFAULT_LIGHT_GAP_SECONDS,
     DEFAULT_LIGHT_PULSE_SECONDS,
     DEFAULT_OVERDUE_INTERVAL,
+    DEFAULT_PREFERRED_TIME,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DOMAIN,
@@ -52,7 +55,7 @@ INTERVAL_SCHEMA = vol.All(vol.Coerce(float), vol.Range(min=1, max=2160))
 
 def _serialise_times(data: dict) -> dict:
     """Convert selector time objects to config-entry-safe strings."""
-    for key in (CONF_QUIET_START, CONF_QUIET_END):
+    for key in (CONF_QUIET_START, CONF_QUIET_END, CONF_PREFERRED_TIME):
         if hasattr(data.get(key), "isoformat"):
             data[key] = data[key].isoformat()
     return data
@@ -86,6 +89,16 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
                 CONF_FRIDGE_INTERVAL,
                 default=defaults.get(CONF_FRIDGE_INTERVAL, DEFAULT_FRIDGE_INTERVAL),
             ): INTERVAL_SCHEMA,
+            vol.Required(
+                CONF_PREFERRED_TIME_ENABLED,
+                default=defaults.get(CONF_PREFERRED_TIME_ENABLED, False),
+            ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_PREFERRED_TIME,
+                default=defaults.get(
+                    CONF_PREFERRED_TIME, DEFAULT_PREFERRED_TIME
+                ),
+            ): selector.TimeSelector(),
             vol.Required(
                 CONF_DUE_SOON,
                 default=defaults.get(CONF_DUE_SOON, DEFAULT_DUE_SOON),

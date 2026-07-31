@@ -15,6 +15,13 @@ Each starter is represented by one Home Assistant device.
 - Bench or fridge storage selector
 - Configurable bench frequency, defaulting to 48 hours
 - Configurable fridge frequency, defaulting to 168 hours (7 days)
+- Optional preferred local feeding time
+- One-off 1-hour, 3-hour or tomorrow-morning deadline delays
+- Custom next-deadline action for automations
+- Compact history of the most recent 20 feeds
+- Feeding calendar for dashboards and calendar automations
+- Native starter event entity for visual automations
+- Home Assistant repair alerts for deleted reminder targets
 - Configurable reminder lead time, defaulting to 12 hours
 - Configurable overdue reminder interval
 - Master switch for all scheduled reminders
@@ -99,12 +106,18 @@ the selected storage location and its configured frequency.
 Changing the storage location immediately recalculates the deadline from the
 existing last-fed time.
 
+Enable **Use a preferred feeding time** to align each interval-based deadline
+to a consistent local clock time, such as 9:00 am. Select a one-off delay and
+press **Delay next feed** when the current deadline needs to move without
+changing the recorded last-fed time.
+
 ## Feeding reminders
 
 Open **Settings → Devices & services → Sourdough Manager → Configure**.
 
 - **Bench feed frequency:** hours between feeds; default 48
 - **Fridge feed frequency:** hours between feeds; default 168
+- **Preferred feeding time:** optional consistent local deadline time
 - **Reminder lead time:** hours before the deadline; default 12, or 0 to
   disable the early reminder
 - **Notification targets:** one or more `notify` entities
@@ -173,6 +186,8 @@ A dependency-free Lovelace card is provided in
 - prominent **Fed now** and **Snooze** buttons
 - push/audio test controls
 - compact retrospective date and time controls
+- one-off deadline delay controls
+- the feeding calendar
 
 Copy the YAML into a Manual card and replace `main_starter` if your generated
 entity IDs use a different prefix.
@@ -215,6 +230,15 @@ data:
 
 Leave out `fed_at` to record the current time.
 
+Set a one-off custom deadline without changing the last-fed time:
+
+```yaml
+action: sourdough_manager.set_next_feed_due
+data:
+  config_entry_id: YOUR_CONFIG_ENTRY_ID
+  due_at: "2026-08-02T09:00:00+10:00"
+```
+
 ## Automation events
 
 The integration fires:
@@ -227,6 +251,18 @@ The integration fires:
 Events include the starter's config-entry ID, last-fed time, next deadline and
 location. Example notification automations are in
 [`examples/automations.yaml`](examples/automations.yaml).
+
+The same lifecycle is also exposed through the starter's native event entity,
+with event types `feed_recorded`, `due_soon`, `overdue`, `location_changed`
+and `deadline_delayed`. This makes the events selectable in Home Assistant's
+visual automation editor without entering raw event-bus names.
+
+## Configuration health
+
+If a configured notification, TTS, media-player or light entity is deleted,
+Sourdough Manager creates a Home Assistant repair warning and turns on the
+starter's **Configuration problem** binary sensor. Open the integration
+options, select valid targets, and the warning clears automatically.
 
 ## Upgrading from an earlier version
 
