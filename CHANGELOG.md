@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.11.0
+
+- Adds configurable Holiday Mode handling: suppress push only, suppress every reminder, or ignore Holiday Mode.
+- Adds independent push, audio and light channel switches.
+- Adds optional occupancy-aware audio using a configurable household-occupied binary sensor.
+- Adds configurable audio/light escalation limits by reminder count and overdue duration.
+- Adds a temporary Silent until next feed control.
+- Adds expanded reminder status, channel and next-reminder diagnostics.
+
 ## 1.10.0
 
 - Pauses all scheduled reminder channels while the configured existing holiday-mode binary sensor is on.
