@@ -301,16 +301,17 @@
     "date": {
       "last_fed_date": {
         "name": "Last fed date"
+      },
+      "next_feed_date": {
+        "name": "Next feed date"
       }
     },
     "time": {
       "last_fed_clock": {
         "name": "Last fed time"
-      }
-    },
-    "datetime": {
-      "next_feed_deadline": {
-        "name": "Next feed deadline"
+      },
+      "next_feed_time": {
+        "name": "Next feed time"
       }
     },
     "select": {
