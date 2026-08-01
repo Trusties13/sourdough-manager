@@ -33,6 +33,12 @@ required.
 
 ### HACS custom repository
 
+Use this button to open the repository directly in HACS:
+
+[![Open your Home Assistant instance and add this repository to HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Trusties13&repository=sourdough-manager&category=integration)
+
+Alternatively, add it manually:
+
 1. In HACS, open **Integrations**, then **Custom repositories**.
 2. Add `https://github.com/Trusties13/sourdough-manager` as an **Integration**.
 3. Install **Sourdough Manager** and restart Home Assistant.
