@@ -204,7 +204,7 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         last_fed = cycle.get("fed_at")
     location = old.get("location", default_location)
     return {
-        "schema_version": 6,
+        "schema_version": 7,
         "last_fed": last_fed,
         "location": location,
         "location_changed_at": old.get("location_changed_at"),
@@ -216,6 +216,13 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         "last_audio_reminder_at": old.get("last_audio_reminder_at"),
         "last_light_reminder_at": old.get("last_light_reminder_at"),
         "reminders_enabled": old.get("reminders_enabled", True),
+        "push_reminders_enabled": old.get("push_reminders_enabled", True),
+        "audio_reminders_enabled": old.get("audio_reminders_enabled"),
+        "light_reminders_enabled": old.get("light_reminders_enabled", True),
+        "silent_until_next_feed": old.get("silent_until_next_feed", False),
+        "disruptive_reminder_count": int(
+            old.get("disruptive_reminder_count", 0)
+        ),
         "deadline_override": old.get("deadline_override"),
         "delay_option": old.get("delay_option", "1"),
         "feed_history": list(old.get("feed_history", []))[-20:],
