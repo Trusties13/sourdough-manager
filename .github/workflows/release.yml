@@ -9,14 +9,53 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify tag commit belongs to main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
       - name: Verify tag matches manifest
         run: |
           VERSION=$(python -c 'import json; print(json.load(open("custom_components/sourdough_manager/manifest.json"))["version"])')
           test "v${VERSION}" = "${GITHUB_REF_NAME}"
+      - name: Validate repository policy
+        run: python scripts/check_repository_policy.py
+      - name: Verify repository remains public
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: test "$(gh api "repos/$GITHUB_REPOSITORY" --jq .visibility)" = "public"
+      - uses: home-assistant/actions/hassfest@master
+      - uses: hacs/action@main
+        with:
+          category: integration
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install homeassistant pytest ruff pyyaml
+      - run: ruff check .
+      - run: pytest
+      - name: Validate JSON and YAML examples
+        run: |
+          python -m json.tool custom_components/sourdough_manager/manifest.json >/dev/null
+          python -m json.tool custom_components/sourdough_manager/strings.json >/dev/null
+          python -m json.tool custom_components/sourdough_manager/translations/en.json >/dev/null
+          python - <<'PY'
+          from pathlib import Path
+          import yaml
+          for path in Path("examples").glob("*.yaml"):
+              yaml.safe_load(path.read_text())
+          PY
+
+  release:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
