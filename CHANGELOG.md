@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.11.1
+
+- Adds the repository-level HACS brand icon so the integration icon appears in HACS listings.
+
 ## 1.11.0
 
 - Adds configurable Holiday Mode handling: suppress push only, suppress every reminder, or ignore Holiday Mode.
