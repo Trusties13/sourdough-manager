@@ -1022,10 +1022,6 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def set_next_feed_due(self, due_at: datetime) -> None:
         """Set a one-off explicit next-feed deadline."""
-        if not self.delay_available():
-            raise HomeAssistantError(
-                "The next feeding can only be changed on its due date or while overdue"
-            )
         if due_at.tzinfo is None:
             due_at = due_at.replace(tzinfo=dt_util.get_default_time_zone())
         due_at = dt_util.as_utc(due_at)
