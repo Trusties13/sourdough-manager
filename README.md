@@ -79,6 +79,38 @@ Copy `custom_components/sourdough_manager` to:
 Restart Home Assistant, then add the integration through
 **Settings → Devices & services**.
 
+## Minimum setup and optional features
+
+Sourdough Manager can be used as a simple feeding schedule without connecting
+any notification, media-player, light, Holiday Mode or occupancy entities.
+
+The minimum setup is:
+
+- **Starter name**
+- **Storage location** — bench or fridge
+- **Bench feed frequency** — defaults to 48 hours
+- **Fridge feed frequency** — defaults to 168 hours (7 days)
+
+**Last fed** is optional during setup. Leave it empty and press **Fed now**
+after installation, or set the date and time later. Until a feed is recorded,
+the next-feed deadline may be unavailable.
+
+Everything below is optional and can be configured later through
+**Settings → Devices & services → Sourdough Manager → Configure**:
+
+- preferred bench and fridge feeding times
+- push-notification targets and feed confirmations
+- quiet hours and reminder cadence
+- a Holiday Mode binary sensor and reminder policy
+- audio reminders, a TTS provider and media-player targets
+- occupancy-aware audio and its household-occupied binary sensor
+- light reminder targets, colour and flash timing
+- disruptive-reminder limits
+
+Leave target selectors empty and keep the corresponding optional feature
+disabled when it is not required. The core **Fed now → next feed due** schedule
+continues to work without those components.
+
 ## Everyday use
 
 The integration creates:

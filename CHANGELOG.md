@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.11.2
+
+- Clearly identifies the minimum required setup and optional reminder integrations in the setup form, options form and README.
+
 ## 1.11.1
 
 - Adds the repository-level HACS brand icon so the integration icon appears in HACS listings.
