@@ -239,6 +239,13 @@ ruff check .
 
 Home Assistant, HACS and test validation workflows run on every pull request.
 
+## AI-assisted development
+
+This integration was developed with assistance from OpenAI Codex. AI was used
+to help generate, review and document parts of the project; the repository
+owner remains responsible for reviewing, testing and maintaining the released
+software.
+
 ## Licence
 
 Sourdough Manager is licensed under the [MIT Licence](LICENSE).
