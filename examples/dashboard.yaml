@@ -146,8 +146,6 @@ cards:
               name: Delay by
             - entity: button.kitchen_main_starter_delay_next_feed
               name: Apply one-off delay
-            - entity: datetime.kitchen_main_starter_next_feed_deadline
-              name: Choose another date and time
 
       - type: conditional
         conditions:
@@ -164,8 +162,15 @@ cards:
               name: Delay by
             - entity: button.kitchen_main_starter_delay_next_feed
               name: Apply one-off delay
-            - entity: datetime.kitchen_main_starter_next_feed_deadline
-              name: Choose another date and time
+
+      - type: entities
+        title: Reschedule next feed
+        show_header_toggle: false
+        entities:
+          - entity: date.kitchen_main_starter_next_feed_date
+            name: Next feed date
+          - entity: time.kitchen_main_starter_next_feed_time
+            name: Next feed time
 
       - type: calendar
         title: Feeding schedule

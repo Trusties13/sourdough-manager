@@ -105,8 +105,9 @@ Enable **Use a preferred feeding time** to align interval-based deadlines to a
 consistent local clock time. Bench and fridge storage can use different times.
 
 When a feed is due today or overdue, the device exposes controls to delay the
-deadline by one hour, three hours or until tomorrow morning. The next-feed
-deadline can also be edited directly without changing the last-fed time.
+deadline by one hour, three hours or until tomorrow morning. **Next feed date**
+and **Next feed time** remain available whenever a schedule exists, allowing
+the next feed to be rescheduled without changing the last-fed time.
 
 If a feed was logged late, edit **Last fed date** and **Last fed time** on the
 starter device. This recalculates the deadline and resets the reminder cycle.
@@ -164,7 +165,7 @@ A dependency-free Lovelace example is provided in
 - schedule status, last feed and next deadline
 - storage and reminder controls
 - **Fed now**, **Snooze** and reminder-test actions
-- late-entry and one-off deadline controls
+- late-entry, rescheduling and one-off delay controls
 - feeding calendar and recent history
 - conditional rescheduling and **Feed and refrigerate** actions
 

@@ -8,7 +8,6 @@ PLATFORMS = [
     Platform.BUTTON,
     Platform.CALENDAR,
     Platform.DATE,
-    Platform.DATETIME,
     Platform.EVENT,
     Platform.SELECT,
     Platform.SWITCH,
