@@ -107,7 +107,7 @@ consistent local clock time. Bench and fridge storage can use different times.
 When a feed is due today or overdue, the device exposes controls to delay the
 deadline by one hour, three hours or until tomorrow morning. **Next feed date**
 and **Next feed time** remain available whenever a schedule exists, allowing
-the next feed to be rescheduled without changing the last-fed time.
+the next feed to be rescheduled at any time without changing the last-fed time.
 
 If a feed was logged late, edit **Last fed date** and **Last fed time** on the
 starter device. This recalculates the deadline and resets the reminder cycle.
