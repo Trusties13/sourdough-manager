@@ -12,8 +12,13 @@ from .models import parse_datetime
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Set up the editable last-fed date."""
-    async_add_entities([LastFedDate(entry.runtime_data)])
+    """Set up editable feeding dates."""
+    async_add_entities(
+        [
+            LastFedDate(entry.runtime_data),
+            NextFeedDate(entry.runtime_data),
+        ]
+    )
 
 
 class LastFedDate(StarterEntity, DateEntity):
@@ -38,3 +43,33 @@ class LastFedDate(StarterEntity, DateEntity):
             tzinfo=dt_util.get_default_time_zone()
         )
         await self.coordinator.record_feed(dt_util.as_utc(combined))
+
+
+class NextFeedDate(StarterEntity, DateEntity):
+    """Allow the next feeding date to be rescheduled."""
+
+    _attr_translation_key = "next_feed_date"
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "next_feed_date")
+
+    @property
+    def native_value(self) -> date | None:
+        due = self.coordinator.next_due()
+        return dt_util.as_local(due).date() if due else None
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.next_due() is not None
+
+    async def async_set_value(self, value: date) -> None:
+        due = self.coordinator.next_due()
+        if due is None:
+            return
+        local_due = dt_util.as_local(due)
+        whole_minute = local_due.time().replace(second=0, microsecond=0)
+        combined = datetime.combine(value, whole_minute).replace(
+            tzinfo=dt_util.get_default_time_zone()
+        )
+        await self.coordinator.set_next_feed_due(dt_util.as_utc(combined))
