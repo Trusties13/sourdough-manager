@@ -7,5 +7,5 @@
   "integration_type": "service",
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/Trusties13/sourdough-manager/issues",
-  "version": "1.11.3"
+  "version": "1.12.0"
 }
