@@ -16,7 +16,7 @@ PLATFORMS = [
 ]
 
 STORAGE_VERSION = 2
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 STORAGE_KEY_PREFIX = f"{DOMAIN}.starter"
 
 CONF_STARTER_NAME = "starter_name"
@@ -47,6 +47,11 @@ CONF_PREFERRED_TIME = "preferred_feed_time"
 CONF_BENCH_PREFERRED_TIME = "bench_preferred_feed_time"
 CONF_FRIDGE_PREFERRED_TIME = "fridge_preferred_feed_time"
 CONF_HOLIDAY_MODE_ENTITY = "holiday_mode_entity"
+CONF_HOLIDAY_MODE_POLICY = "holiday_mode_policy"
+CONF_OCCUPANCY_AUDIO_ONLY = "occupancy_audio_only"
+CONF_OCCUPANCY_ENTITY = "occupancy_entity"
+CONF_DISRUPTIVE_MAX_COUNT = "disruptive_max_count"
+CONF_DISRUPTIVE_MAX_OVERDUE_HOURS = "disruptive_max_overdue_hours"
 
 LOCATION_BENCH = "bench"
 LOCATION_FRIDGE = "refrigerator"
@@ -65,11 +70,16 @@ DEFAULT_LIGHT_PULSE_SECONDS = 1.0
 DEFAULT_LIGHT_GAP_SECONDS = 0.25
 DEFAULT_PREFERRED_TIME = "09:00:00"
 DEFAULT_HOLIDAY_MODE_ENTITY = "binary_sensor.holiday_mode"
+DEFAULT_HOLIDAY_MODE_POLICY = "suppress_push"
+DEFAULT_OCCUPANCY_ENTITY = "binary_sensor.house_occupied"
+DEFAULT_DISRUPTIVE_MAX_COUNT = 0
+DEFAULT_DISRUPTIVE_MAX_OVERDUE_HOURS = 0.0
 DEFAULT_QUIET_START = "22:00:00"
 DEFAULT_QUIET_END = "07:00:00"
 DEFAULT_SNOOZE_HOURS = "1"
 SNOOZE_OPTIONS = ("1", "3", "12")
 DELAY_OPTIONS = ("1", "3", "tomorrow_morning")
+HOLIDAY_MODE_POLICIES = ("suppress_push", "suppress_all", "ignore")
 DUPLICATE_FEED_SECONDS = 10
 MAX_FEED_HISTORY = 20
 
