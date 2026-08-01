@@ -1,62 +1,33 @@
 # Sourdough Manager
 
-A focused, local-first Home Assistant custom integration that answers two
-questions:
+Sourdough Manager is a local-first Home Assistant custom integration for
+tracking when a sourdough starter was last fed and calculating when it should
+be fed again. It provides a simple **Fed now** workflow, separate bench and
+fridge schedules, and optional reminders through push notifications, spoken
+announcements and colour-capable lights.
 
-1. When was my sourdough starter last fed?
-2. When is it due to be fed again?
+Each starter is represented as its own Home Assistant device, with native
+entities for dashboards, automations and manual corrections. All information
+is stored locally in Home Assistant; no cloud account or external service is
+required.
 
-Each starter is represented by one Home Assistant device.
+## Highlights
 
-## Features
-
-- **Fed now** button for one-tap logging
-- Compact **Last fed date** and **Last fed time** controls for late logging
-- Bench or fridge storage selector
-- Configurable bench frequency, defaulting to 48 hours
-- Configurable fridge frequency, defaulting to 168 hours (7 days)
-- Optional, separate preferred feeding times for bench and fridge storage
-- One-off 1-hour, 3-hour or tomorrow-morning deadline delays
-- Delay controls limited to the due date and overdue period
-- Configurable Holiday Mode handling using an existing binary sensor
-- **Feed and refrigerate** combined action
-- Due-today, schedule-status and missed-feed sensors
-- Editable one-off next-feed deadline
-- Custom next-deadline action for automations
-- Compact history of the most recent 20 feeds
-- Feeding calendar for dashboards and calendar automations
-- Native starter event entity for visual automations
-- Home Assistant repair alerts for deleted reminder targets
-- Configurable reminder lead time, defaulting to 12 hours
-- Configurable overdue reminder interval
-- Master switch for all scheduled reminders
-- Independent push, audio and light channel switches
-- Optional occupancy-aware audio using `binary_sensor.house_occupied`
-- Configurable audio/light escalation limits
-- **Silent until next feed** control for the current cycle
-- Next-reminder and expanded reminder-status sensors
-- Optional overnight quiet hours
-- One or more selectable Home Assistant notification targets
-- Repeating overdue reminders until the next feed is recorded
-- 1, 3 or 12-hour snooze control
-- Companion App notifications with **Fed now** and **Snooze** actions
-- Dynamic notification titles and progressively firmer overdue wording
-- Stable per-type notification tags, preventing repeated alerts from stacking
-- Optional text-to-speech reminders on one or more media players
-- Independent audio lead time and repeat interval
-- Optional red-flash reminders on selected colour lights
-- Configurable light flash count, pulse duration and gap
-- Automatic restoration of each reminder light's prior state and colour
-- Optional confirmation when a feed is recorded
-- Duplicate protection for rapid physical-button presses
-- Human-friendly configuration summaries on the starter device
-- Last-fed and next-feed timestamps
-- Feed-due and feed-due-soon binary sensors
-- Overdue duration on the next-feed sensor
-- Events for optional Home Assistant automations
-- Startup-safe minute-by-minute deadline updates
-- Multiple starters, with one device per starter
-- Automatic migration of last-fed time and location from pre-1.0 versions
+- **Simple feed tracking:** record a feed with one press, correct a late entry,
+  or use the combined **Feed and refrigerate** action.
+- **Flexible scheduling:** configure separate bench and fridge intervals,
+  preferred feeding times, one-off delays and custom deadlines.
+- **Clear status:** see the last feed, next deadline, due-today, due-soon,
+  overdue and missed-feed information at a glance.
+- **Optional reminders:** send push, audio and light alerts independently, with
+  quiet hours, snoozing, Holiday Mode policies and escalation limits.
+- **Actionable notifications:** Companion App alerts can record **Fed now** or
+  snooze reminders without opening Home Assistant.
+- **Safe household alerts:** audio can depend on occupancy; media-player volume
+  and light state are restored after each reminder.
+- **Home Assistant native:** supports multiple starters, visual automation
+  events, a feeding calendar, recent feed history, Repairs and NFC or physical
+  button workflows.
 
 ## Installation
 
@@ -65,26 +36,23 @@ Each starter is represented by one Home Assistant device.
 1. In HACS, open **Integrations**, then **Custom repositories**.
 2. Add `https://github.com/Trusties13/sourdough-manager` as an **Integration**.
 3. Install **Sourdough Manager** and restart Home Assistant.
-4. Go to **Settings → Devices & services → Add integration** and add
+4. Open **Settings → Devices & services → Add integration** and select
    **Sourdough Manager**.
 
-### Manual
+### Manual installation
 
-Copy `custom_components/sourdough_manager` to:
+Copy `custom_components/sourdough_manager` into:
 
 ```text
 /config/custom_components/sourdough_manager
 ```
 
-Restart Home Assistant, then add the integration through
+Restart Home Assistant, then add **Sourdough Manager** through
 **Settings → Devices & services**.
 
-## Minimum setup and optional features
+## Quick start
 
-Sourdough Manager can be used as a simple feeding schedule without connecting
-any notification, media-player, light, Holiday Mode or occupancy entities.
-
-The minimum setup is:
+Only four values are needed to create a working feeding schedule:
 
 - **Starter name**
 - **Storage location** — bench or fridge
@@ -92,177 +60,118 @@ The minimum setup is:
 - **Fridge feed frequency** — defaults to 168 hours (7 days)
 
 **Last fed** is optional during setup. Leave it empty and press **Fed now**
-after installation, or set the date and time later. Until a feed is recorded,
-the next-feed deadline may be unavailable.
+after installation, or set the date and time later. The next-feed deadline
+becomes available after the first feed is recorded.
 
-Everything below is optional and can be configured later through
-**Settings → Devices & services → Sourdough Manager → Configure**:
+After feeding:
 
-- preferred bench and fridge feeding times
-- push-notification targets and feed confirmations
-- quiet hours and reminder cadence
-- a Holiday Mode binary sensor and reminder policy
-- audio reminders, a TTS provider and media-player targets
-- occupancy-aware audio and its household-occupied binary sensor
-- light reminder targets, colour and flash timing
-- disruptive-reminder limits
-
-Leave target selectors empty and keep the corresponding optional feature
-disabled when it is not required. The core **Fed now → next feed due** schedule
-continues to work without those components.
-
-## Everyday use
-
-The integration creates:
-
-- Storage location
-- Last fed
-- Next feed due
-- Feed due soon
-- Feed due
-- Fed now
-- Last fed date
-- Last fed time
-- Bench feed frequency
-- Fridge feed frequency
-- Reminder lead time
-- Notification targets
-- Overdue reminder interval
-- Quiet hours
-- Feed confirmation
-- Last reminder sent
-- Snooze duration
-- Snooze reminders
-- Push reminders switch
-- Audio reminders switch
-- Light reminders switch
-- Silent until next feed switch
-- Next reminder
-- Reminder channels
-- Disruptive reminder count
-- Audio reminders
-- Audio voice
-- Audio targets
-- Audio reminder lead time
-- Audio reminder interval
-- Last audio reminder
-- Light reminder targets
-- Last light reminder
-
-After feeding the starter, press **Fed now**. The deadline is calculated from
-the selected storage location and its configured frequency.
+1. Press **Fed now** on the starter device or dashboard.
+2. Sourdough Manager records the time.
+3. The next deadline is calculated from the selected storage location and its
+   configured frequency.
 
 Changing the storage location immediately recalculates the deadline from the
 existing last-fed time.
 
-Enable **Use a preferred feeding time** to align each interval-based deadline
-to the separately configured bench or fridge clock time. Delay and editable
-deadline controls become available on the scheduled feed date and remain
-available while the feed is overdue.
+## Optional configuration
 
-## Feeding reminders
+Open **Settings → Devices & services → Sourdough Manager → Configure** to add
+any of the following features:
 
-Open **Settings → Devices & services → Sourdough Manager → Configure**.
+| Capability | Optional configuration |
+| --- | --- |
+| Consistent clock times | Preferred bench and fridge feeding times |
+| Push reminders | One or more `notify` entities and an optional feed confirmation |
+| Reminder timing | Lead time, overdue interval, quiet hours and snooze duration |
+| Holiday Mode | An existing binary sensor and push/all/ignore policy |
+| Spoken reminders | A TTS provider, media players, volume and repeat interval |
+| Presence-aware audio | An existing household-occupied binary sensor |
+| Light reminders | Colour-capable lights, reminder colour and pulse timing |
+| Escalation controls | Maximum disruptive reminders and overdue duration |
 
-- **Bench feed frequency:** hours between feeds; default 48
-- **Fridge feed frequency:** hours between feeds; default 168
-- **Preferred bench feeding time:** consistent local bench deadline time
-- **Preferred fridge feeding time:** consistent local refrigerated deadline time
-- **Holiday mode sensor:** existing binary sensor; defaults to
-  `binary_sensor.holiday_mode`
-- **Holiday mode reminder policy:** suppress push only (default), suppress all
-  reminder channels, or ignore Holiday Mode
-- **Reminder lead time:** hours before the deadline; default 12, or 0 to
-  disable the early reminder
-- **Notification targets:** one or more `notify` entities
-- **Overdue reminder interval:** minutes between reminders after feeding is due
-- **Quiet hours:** optional start and end times that suppress scheduled reminders
-- **Confirm recorded feeds:** optionally acknowledge successful feed logging
-- **Enable audio reminders:** speak reminders through selected media players
-- **Only speak while occupied:** optional presence gate for audio reminders
-- **Household occupied sensor:** defaults to `binary_sensor.house_occupied`
-- **Text-to-speech provider:** the Home Assistant TTS entity/voice to use
-- **Audio targets:** one or more media players
-- **Audio reminder lead time:** when spoken reminders begin
-- **Audio reminder interval:** independent cadence for repeated announcements
-- **Audio announcement volume:** temporary playback level for announcements
-- **Maximum disruptive reminders:** optional audio/light cap per feed cycle;
-  use 0 for unlimited
-- **Stop disruptive reminders after:** optional overdue-hour cap for audio and
-  light; push reminders continue
-- **Light reminder targets:** colour-capable lights to accompany reminders
-- **Light reminder colour:** selectable RGB colour, defaulting to red
-- **Light flash count:** number of reminder-colour pulses; default 3
-- **Light pulse duration:** seconds per colour pulse; default 1
-- **Light gap duration:** seconds between pulses; default 0.25
+Leave target selectors empty and keep the corresponding feature disabled when
+it is not required. The core **Fed now → next feed due** schedule works without
+notification, media-player, light, Holiday Mode or occupancy entities.
 
-Changing a frequency immediately recalculates the next deadline.
-The integration sends one early reminder, then sends an overdue reminder every
-configured interval after the deadline until **Fed now**, **Last fed date** or
-**Last fed time** is changed. Reminders resume after quiet hours or a snooze.
+## Scheduling and corrections
 
-Companion App targets receive **Fed now** and **Snooze** actions. Other
-notification entities receive the same reminder text without action buttons.
-Due-soon, overdue and confirmation notifications use separate stable tags.
-Repeated overdue reminders replace the previous overdue alert, and their
-wording becomes firmer after 2, 12 and 24 hours overdue.
-Pressing **Fed now** or setting an earlier feed clears the tagged overdue
-Companion App notification. The **Reminders** switch disables or enables all
-scheduled push, audio and light reminders without discarding their settings.
-Test buttons remain available while reminders are disabled.
+Enable **Use a preferred feeding time** to align interval-based deadlines to a
+consistent local clock time. Bench and fridge storage can use different times.
 
-Audio reminders use Home Assistant's standard `tts.speak` action. They follow
-the same quiet hours and snooze state as push notifications, skip unavailable
-media players, use the escalating overdue wording and stop as soon as a feed is
-recorded. Before each announcement, the player's existing volume is captured
-and the configured announcement volume is applied. The previous volume is
-restored after playback finishes.
+When a feed is due today or overdue, the device exposes controls to delay the
+deadline by one hour, three hours or until tomorrow morning. The next-feed
+deadline can also be edited directly without changing the last-fed time.
 
-Selected reminder lights flash in the configured colour three times, with each
-colour pulse lasting one second, whenever a scheduled push or
-audio reminder is actually sent. If both types are sent during the same update,
-the lights flash only once. Light reminders respect quiet hours and snooze.
-Each light's on/off state, brightness, colour mode, colour and effect are
-captured before flashing and restored afterwards. Originally-off lights finish
-off after their previous colour settings have been reapplied. Lights that were
-already on alternate between the reminder colour and their original colour three times without
-being switched off.
+If a feed was logged late, edit **Last fed date** and **Last fed time** on the
+starter device. This recalculates the deadline and resets the reminder cycle.
 
-The device also provides separate **Test push reminder** and **Test audio
-reminder** buttons. Tests use the configured targets, trigger the same light
-flash and do not alter the last-fed time or reminder schedule. Test buttons run
-even during quiet hours or a snooze so the complete configuration can be
-checked immediately. Both tests use the same wording as a one-hour-overdue feed
-reminder, clearly prefixed as a test. Holiday Mode defaults to suppressing push
-notifications only, so audio and any accompanying light alert continue. The
-master switch, quiet hours and snooze still pause every scheduled channel.
+## Reminders
 
-## Dashboard card
+Scheduled reminders are optional and controlled by a master **Reminders**
+switch. Push, audio and light channels can also be enabled independently.
 
-A dependency-free Lovelace card is provided in
+The normal reminder sequence is:
+
+1. A due-soon reminder is sent at the configured lead time.
+2. A due reminder is sent at the deadline.
+3. Overdue reminders repeat at the configured interval until a feed is
+   recorded, the cycle is snoozed, or reminders are disabled.
+
+Quiet hours pause scheduled reminders without discarding them. Holiday Mode can
+suppress push only, suppress every reminder channel, or be ignored. **Silent
+until next feed** pauses the current reminder cycle and resets automatically
+when the next feed is recorded.
+
+Companion App notifications include **Fed now** and **Snooze** actions. Stable
+notification tags ensure repeated overdue reminders replace the previous alert
+instead of stacking. Overdue titles and wording become progressively firmer as
+the delay increases, and the overdue notification is cleared after feeding.
+
+### Audio reminders
+
+Audio reminders use Home Assistant's `tts.speak` action. Before an
+announcement, Sourdough Manager captures the media player's current volume,
+uses the configured announcement volume, then restores the previous level.
+Unavailable players are skipped. Audio can optionally be limited to periods
+when an existing household-occupied sensor is on.
+
+### Light reminders
+
+Selected colour-capable lights pulse in the configured reminder colour whenever
+an enabled push or audio reminder is delivered. Lights that were already on
+alternate between the reminder colour and their original colour; lights that
+were off return to off. Brightness, colour, colour mode and effect are restored
+afterwards.
+
+### Testing reminders
+
+The starter device includes **Test push reminder** and **Test audio reminder**
+buttons. Tests use the configured targets, include the light alert and do not
+change the feed schedule. They remain available while scheduled reminders are
+disabled, snoozed or within quiet hours.
+
+## Dashboard
+
+A dependency-free Lovelace example is provided in
 [`examples/dashboard.yaml`](examples/dashboard.yaml). It includes:
 
-- a dynamic on-schedule, due-soon or overdue heading
-- last-fed and next-feed tiles
-- storage location and reminder master controls
-- prominent **Fed now** and **Snooze** buttons
-- push/audio test controls
-- compact retrospective date and time controls
-- one-off deadline delay controls
-- the feeding calendar
-- recent feed history
-- conditional overdue rescheduling
-- a combined **Feed and refrigerate** action
+- schedule status, last feed and next deadline
+- storage and reminder controls
+- **Fed now**, **Snooze** and reminder-test actions
+- late-entry and one-off deadline controls
+- feeding calendar and recent history
+- conditional rescheduling and **Feed and refrigerate** actions
 
 Copy the YAML into a Manual card and replace `main_starter` if your generated
 entity IDs use a different prefix.
 
-## Physical button or NFC tag
+## Physical buttons and NFC tags
 
-Any physical button in Home Assistant can run the starter's **Fed now** button
-through an automation. Rapid duplicate presses within 10 seconds are ignored.
+Any physical button available in Home Assistant can press the starter's
+**Fed now** button through an automation. Rapid duplicate feed actions within
+10 seconds are ignored.
 
-An NFC tag attached to the starter jar can do the same:
+An NFC tag attached to the starter jar can use the same action:
 
 ```yaml
 alias: Sourdough - NFC feed log
@@ -278,13 +187,9 @@ actions:
 Create the tag in **Settings → Tags**, replace the example entity ID with your
 starter's **Fed now** entity, then scan the tag after feeding.
 
-## Record an earlier feed
+## Actions and automation events
 
-If you forgot to press **Fed now**, edit **Last fed date** and/or **Last fed
-time** in the starter's Configuration section. This recalculates the next
-deadline and resets the reminder cycle.
-
-Automations can also record an earlier feed with this action:
+Record the current time or an earlier feed from an automation:
 
 ```yaml
 action: sourdough_manager.record_feed
@@ -293,7 +198,7 @@ data:
   fed_at: "2026-07-25T21:30:00+10:00"
 ```
 
-Leave out `fed_at` to record the current time.
+Omit `fed_at` to record the current time.
 
 Set a one-off custom deadline without changing the last-fed time:
 
@@ -304,9 +209,7 @@ data:
   due_at: "2026-08-02T09:00:00+10:00"
 ```
 
-## Automation events
-
-The integration fires:
+Sourdough Manager fires these Home Assistant events:
 
 - `sourdough_manager_feed_recorded`
 - `sourdough_manager_feed_due_soon`
@@ -314,27 +217,17 @@ The integration fires:
 - `sourdough_manager_location_changed`
 
 Events include the starter's config-entry ID, last-fed time, next deadline and
-location. Example notification automations are in
+storage location. The same lifecycle is exposed through the starter's native
+event entity, including `deadline_delayed`, so events are selectable in the
+visual automation editor. Examples are available in
 [`examples/automations.yaml`](examples/automations.yaml).
-
-The same lifecycle is also exposed through the starter's native event entity,
-with event types `feed_recorded`, `due_soon`, `overdue`, `location_changed`
-and `deadline_delayed`. This makes the events selectable in Home Assistant's
-visual automation editor without entering raw event-bus names.
 
 ## Configuration health
 
 If a configured notification, TTS, media-player or light entity is deleted,
 Sourdough Manager creates a Home Assistant repair warning and turns on the
-starter's **Configuration problem** binary sensor. Open the integration
-options, select valid targets, and the warning clears automatically.
-
-## Upgrading from an earlier version
-
-Version 1.0 automatically retains the most recent feed time and current
-bench/fridge location. Detailed fermentation, quantity and prediction entities
-are retired and removed from the entity registry. Their old Recorder history is
-not deleted.
+starter's **Configuration problem** binary sensor. Select valid targets in the
+integration options and the warning clears automatically.
 
 ## Development
 
@@ -344,8 +237,8 @@ python -m pytest
 ruff check .
 ```
 
-Home Assistant and HACS validation workflows run on pull requests.
+Home Assistant, HACS and test validation workflows run on every pull request.
 
 ## Licence
 
-MIT
+Sourdough Manager is licensed under the [MIT Licence](LICENSE).
