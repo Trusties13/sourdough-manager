@@ -16,10 +16,13 @@ from .const import (
     CONF_BENCH_INTERVAL,
     CONF_BENCH_PREFERRED_TIME,
     CONF_CONFIRM_FEED,
+    CONF_DISRUPTIVE_MAX_COUNT,
+    CONF_DISRUPTIVE_MAX_OVERDUE_HOURS,
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_FRIDGE_PREFERRED_TIME,
     CONF_HOLIDAY_MODE_ENTITY,
+    CONF_HOLIDAY_MODE_POLICY,
     CONF_LAST_FED,
     CONF_LIGHT_COLOR,
     CONF_LIGHT_FLASH_COUNT,
@@ -28,6 +31,8 @@ from .const import (
     CONF_LIGHT_TARGETS,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
+    CONF_OCCUPANCY_AUDIO_ONLY,
+    CONF_OCCUPANCY_ENTITY,
     CONF_OVERDUE_INTERVAL,
     CONF_PREFERRED_TIME,
     CONF_PREFERRED_TIME_ENABLED,
@@ -39,18 +44,23 @@ from .const import (
     DEFAULT_AUDIO_LEAD_TIME,
     DEFAULT_AUDIO_VOLUME,
     DEFAULT_BENCH_INTERVAL,
+    DEFAULT_DISRUPTIVE_MAX_COUNT,
+    DEFAULT_DISRUPTIVE_MAX_OVERDUE_HOURS,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
     DEFAULT_HOLIDAY_MODE_ENTITY,
+    DEFAULT_HOLIDAY_MODE_POLICY,
     DEFAULT_LIGHT_COLOR,
     DEFAULT_LIGHT_FLASH_COUNT,
     DEFAULT_LIGHT_GAP_SECONDS,
     DEFAULT_LIGHT_PULSE_SECONDS,
+    DEFAULT_OCCUPANCY_ENTITY,
     DEFAULT_OVERDUE_INTERVAL,
     DEFAULT_PREFERRED_TIME,
     DEFAULT_QUIET_END,
     DEFAULT_QUIET_START,
     DOMAIN,
+    HOLIDAY_MODE_POLICIES,
     LOCATIONS,
 )
 
@@ -126,6 +136,17 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
                 selector.EntitySelectorConfig(domain="binary_sensor")
             ),
             vol.Required(
+                CONF_HOLIDAY_MODE_POLICY,
+                default=defaults.get(
+                    CONF_HOLIDAY_MODE_POLICY, DEFAULT_HOLIDAY_MODE_POLICY
+                ),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=list(HOLIDAY_MODE_POLICIES),
+                    translation_key="holiday_mode_policy",
+                )
+            ),
+            vol.Required(
                 CONF_DUE_SOON,
                 default=defaults.get(CONF_DUE_SOON, DEFAULT_DUE_SOON),
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=168)),
@@ -161,6 +182,18 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
                 CONF_AUDIO_ENABLED,
                 default=defaults.get(CONF_AUDIO_ENABLED, False),
             ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_OCCUPANCY_AUDIO_ONLY,
+                default=defaults.get(CONF_OCCUPANCY_AUDIO_ONLY, False),
+            ): selector.BooleanSelector(),
+            vol.Optional(
+                CONF_OCCUPANCY_ENTITY,
+                default=defaults.get(
+                    CONF_OCCUPANCY_ENTITY, DEFAULT_OCCUPANCY_ENTITY
+                ),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="binary_sensor")
+            ),
             audio_tts_field: selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="tts")
             ),
@@ -198,6 +231,19 @@ def _schema(defaults: dict, include_identity: bool) -> vol.Schema:
                     unit_of_measurement="%",
                 )
             ),
+            vol.Required(
+                CONF_DISRUPTIVE_MAX_COUNT,
+                default=defaults.get(
+                    CONF_DISRUPTIVE_MAX_COUNT, DEFAULT_DISRUPTIVE_MAX_COUNT
+                ),
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
+            vol.Required(
+                CONF_DISRUPTIVE_MAX_OVERDUE_HOURS,
+                default=defaults.get(
+                    CONF_DISRUPTIVE_MAX_OVERDUE_HOURS,
+                    DEFAULT_DISRUPTIVE_MAX_OVERDUE_HOURS,
+                ),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=720)),
             vol.Optional(
                 CONF_LIGHT_TARGETS,
                 default=defaults.get(CONF_LIGHT_TARGETS, []),
