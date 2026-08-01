@@ -24,10 +24,13 @@ from .const import (
     CONF_BENCH_INTERVAL,
     CONF_BENCH_PREFERRED_TIME,
     CONF_CONFIRM_FEED,
+    CONF_DISRUPTIVE_MAX_COUNT,
+    CONF_DISRUPTIVE_MAX_OVERDUE_HOURS,
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_FRIDGE_PREFERRED_TIME,
     CONF_HOLIDAY_MODE_ENTITY,
+    CONF_HOLIDAY_MODE_POLICY,
     CONF_LAST_FED,
     CONF_LIGHT_COLOR,
     CONF_LIGHT_FLASH_COUNT,
@@ -36,6 +39,8 @@ from .const import (
     CONF_LIGHT_TARGETS,
     CONF_LOCATION,
     CONF_NOTIFICATION_TARGETS,
+    CONF_OCCUPANCY_AUDIO_ONLY,
+    CONF_OCCUPANCY_ENTITY,
     CONF_OVERDUE_INTERVAL,
     CONF_PREFERRED_TIME,
     CONF_PREFERRED_TIME_ENABLED,
@@ -46,13 +51,17 @@ from .const import (
     DEFAULT_AUDIO_LEAD_TIME,
     DEFAULT_AUDIO_VOLUME,
     DEFAULT_BENCH_INTERVAL,
+    DEFAULT_DISRUPTIVE_MAX_COUNT,
+    DEFAULT_DISRUPTIVE_MAX_OVERDUE_HOURS,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
     DEFAULT_HOLIDAY_MODE_ENTITY,
+    DEFAULT_HOLIDAY_MODE_POLICY,
     DEFAULT_LIGHT_COLOR,
     DEFAULT_LIGHT_FLASH_COUNT,
     DEFAULT_LIGHT_GAP_SECONDS,
     DEFAULT_LIGHT_PULSE_SECONDS,
+    DEFAULT_OCCUPANCY_ENTITY,
     DEFAULT_OVERDUE_INTERVAL,
     DEFAULT_PREFERRED_TIME,
     DEFAULT_QUIET_END,
@@ -171,9 +180,66 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         return bool(entity_id) and self.hass.states.is_state(entity_id, "on")
 
+    def holiday_policy(self) -> str:
+        """Return how Holiday Mode affects reminders."""
+        return str(
+            self.option(CONF_HOLIDAY_MODE_POLICY, DEFAULT_HOLIDAY_MODE_POLICY)
+        )
+
+    def channel_enabled(self, channel: str) -> bool:
+        """Return whether one reminder channel is enabled."""
+        stored = self.data.get(f"{channel}_reminders_enabled")
+        if stored is not None:
+            return bool(stored)
+        if channel == "audio":
+            return bool(self.option(CONF_AUDIO_ENABLED, False))
+        return True
+
+    def occupancy_allows_audio(self) -> bool:
+        """Return whether occupancy settings permit spoken reminders."""
+        if not bool(self.option(CONF_OCCUPANCY_AUDIO_ONLY, False)):
+            return True
+        entity_id = self.option(CONF_OCCUPANCY_ENTITY, DEFAULT_OCCUPANCY_ENTITY)
+        return bool(entity_id) and self.hass.states.is_state(entity_id, "on")
+
+    def disruptive_reminders_allowed(self) -> bool:
+        """Return whether audio and light escalation may continue."""
+        if self.data.get("silent_until_next_feed", False):
+            return False
+        maximum = int(
+            self.option(CONF_DISRUPTIVE_MAX_COUNT, DEFAULT_DISRUPTIVE_MAX_COUNT)
+        )
+        if maximum and int(self.data.get("disruptive_reminder_count", 0)) >= maximum:
+            return False
+        due = self.next_due()
+        maximum_hours = float(
+            self.option(
+                CONF_DISRUPTIVE_MAX_OVERDUE_HOURS,
+                DEFAULT_DISRUPTIVE_MAX_OVERDUE_HOURS,
+            )
+        )
+        return not (
+            maximum_hours
+            and due is not None
+            and dt_util.utcnow() - due >= timedelta(hours=maximum_hours)
+        )
+
     def schedule_status(self) -> str:
         """Return a concise dashboard-friendly schedule state."""
-        if self.holiday_mode_active():
+        if not bool(self.data.get("reminders_enabled", True)):
+            return "reminders_disabled"
+        if self.data.get("silent_until_next_feed", False):
+            return "silent_until_feed"
+        if self._snoozed():
+            return "snoozed"
+        if self._quiet_hours_active():
+            return "quiet_hours"
+        if (
+            self.holiday_mode_active()
+            and self.holiday_policy() == "suppress_push"
+        ):
+            return "holiday_push_suppressed"
+        if self.holiday_mode_active() and self.holiday_policy() == "suppress_all":
             return "holiday"
         is_due, is_due_soon = self.schedule_state()
         if is_due:
@@ -192,6 +258,63 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             float(self.option(CONF_DUE_SOON, DEFAULT_DUE_SOON)),
         )
 
+    def next_reminder_times(self) -> dict[str, datetime | None]:
+        """Return the next calculable push and audio reminder times."""
+        due = self.next_due()
+        now = dt_util.utcnow()
+        push_at: datetime | None = None
+        audio_at: datetime | None = None
+        if due is None or self.notifications_paused():
+            return {"push": None, "audio": None}
+        if self.channel_enabled("push") and not self.push_notifications_paused():
+            if now < due:
+                early = due - timedelta(
+                    hours=float(self.option(CONF_DUE_SOON, DEFAULT_DUE_SOON))
+                )
+                if self.data.get("last_reminder_for") != due.isoformat():
+                    push_at = max(now, early)
+                else:
+                    push_at = due
+            else:
+                last_push = parse_datetime(
+                    self.data.get("last_overdue_reminder_at")
+                )
+                push_at = max(
+                    now,
+                    (last_push or now)
+                    + timedelta(
+                        minutes=float(
+                            self.option(
+                                CONF_OVERDUE_INTERVAL,
+                                DEFAULT_OVERDUE_INTERVAL,
+                            )
+                        )
+                    ),
+                ) if last_push else now
+        if (
+            self.channel_enabled("audio")
+            and self.occupancy_allows_audio()
+            and self.disruptive_reminders_allowed()
+        ):
+            start = due - timedelta(
+                hours=float(
+                    self.option(CONF_AUDIO_LEAD_TIME, DEFAULT_AUDIO_LEAD_TIME)
+                )
+            )
+            last_audio = parse_datetime(self.data.get("last_audio_reminder_at"))
+            audio_at = max(now, start)
+            if last_audio:
+                audio_at = max(
+                    audio_at,
+                    last_audio
+                    + timedelta(
+                        minutes=float(
+                            self.option(CONF_AUDIO_INTERVAL, DEFAULT_AUDIO_INTERVAL)
+                        )
+                    ),
+                )
+        return {"push": push_at, "audio": audio_at}
+
     async def _async_update_data(self) -> dict[str, Any]:
         """Refresh time-dependent entities and fire threshold events once."""
         self._update_configuration_issue()
@@ -206,11 +329,21 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             reminder_sent = (
                 await self._async_send_overdue_reminder() or reminder_sent
             )
-        reminder_sent = (
-            await self._async_send_audio_reminder() or reminder_sent
-        )
+        audio_sent = await self._async_send_audio_reminder()
+        reminder_sent = audio_sent or reminder_sent
+        light_sent = False
         if reminder_sent:
-            await self._async_send_light_reminder()
+            light_sent = await self._async_send_light_reminder()
+        if audio_sent or light_sent:
+            data = {
+                **self.data,
+                "disruptive_reminder_count": int(
+                    self.data.get("disruptive_reminder_count", 0)
+                )
+                + 1,
+            }
+            await self.store.save(data)
+            self.async_set_updated_data(data)
         if is_due and not self._was_due:
             self._fire(EVENT_OVERDUE)
         self._was_due = is_due
@@ -247,6 +380,9 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         tts = self.option(CONF_AUDIO_TTS_ENTITY, None)
         if tts:
             configured.append(tts)
+        occupancy = self.option(CONF_OCCUPANCY_ENTITY, DEFAULT_OCCUPANCY_ENTITY)
+        if bool(self.option(CONF_OCCUPANCY_AUDIO_ONLY, False)) and occupancy:
+            configured.append(occupancy)
         holiday = self.option(
             CONF_HOLIDAY_MODE_ENTITY, DEFAULT_HOLIDAY_MODE_ENTITY
         )
@@ -288,7 +424,9 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_send_reminder(self) -> bool:
         """Send at most one configured notification for the current deadline."""
-        if self.notifications_paused():
+        if not self.channel_enabled("push"):
+            return False
+        if self.push_notifications_paused():
             return False
         targets = self.option(CONF_NOTIFICATION_TARGETS, [])
         if isinstance(targets, str):
@@ -315,7 +453,9 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_send_overdue_reminder(self) -> bool:
         """Repeat overdue notifications at the configured interval until fed."""
-        if self.notifications_paused():
+        if not self.channel_enabled("push"):
+            return False
+        if self.push_notifications_paused():
             return False
         targets = self.option(CONF_NOTIFICATION_TARGETS, [])
         if isinstance(targets, str):
@@ -347,9 +487,13 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_send_audio_reminder(self) -> bool:
         """Speak reminders on configured media players at its own cadence."""
-        if not bool(self.option(CONF_AUDIO_ENABLED, False)):
+        if not self.channel_enabled("audio"):
             return False
         if self.notifications_paused():
+            return False
+        if not self.occupancy_allows_audio():
+            return False
+        if not self.disruptive_reminders_allowed():
             return False
         tts_entity = self.option(CONF_AUDIO_TTS_ENTITY, None)
         targets = self.option(CONF_AUDIO_TARGETS, [])
@@ -402,15 +546,19 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_send_light_reminder(
         self, *, ignore_pause: bool = False
-    ) -> None:
+    ) -> bool:
         """Accompany a sent push or audio reminder with a light flash."""
         if not ignore_pause and self.notifications_paused():
-            return
+            return False
+        if not ignore_pause and not self.channel_enabled("light"):
+            return False
+        if not ignore_pause and not self.disruptive_reminders_allowed():
+            return False
         targets = self.option(CONF_LIGHT_TARGETS, [])
         if isinstance(targets, str):
             targets = [targets]
         if not targets:
-            return
+            return False
         now = dt_util.utcnow()
         flashed = False
         for light in targets:
@@ -430,9 +578,13 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             except HomeAssistantError:
                 _LOGGER.exception("Unable to flash reminder light %s", light)
         if flashed:
-            data = {**self.data, "last_light_reminder_at": now.isoformat()}
+            data = {
+                **self.data,
+                "last_light_reminder_at": now.isoformat(),
+            }
             await self.store.save(data)
             self.async_set_updated_data(data)
+        return flashed
 
     async def test_push_reminder(self) -> None:
         """Send a test push reminder and accompany it with the light alert."""
@@ -624,21 +776,39 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     blocking=True,
                 )
 
-    def notifications_paused(self) -> bool:
-        """Return whether snooze or quiet hours currently suppress reminders."""
-        if not bool(self.data.get("reminders_enabled", True)):
-            return True
-        if self.holiday_mode_active():
-            return True
-        now = dt_util.utcnow()
+    def _snoozed(self) -> bool:
+        """Return whether the reminder cycle is currently snoozed."""
         snoozed_until = parse_datetime(self.data.get("snoozed_until"))
-        if snoozed_until and now < snoozed_until:
-            return True
+        return bool(snoozed_until and dt_util.utcnow() < snoozed_until)
+
+    def _quiet_hours_active(self) -> bool:
+        """Return whether configured quiet hours are active."""
+        now = dt_util.utcnow()
         return quiet_hours_active(
             dt_util.as_local(now),
             bool(self.option(CONF_QUIET_HOURS_ENABLED, False)),
             self.option(CONF_QUIET_START, DEFAULT_QUIET_START),
             self.option(CONF_QUIET_END, DEFAULT_QUIET_END),
+        )
+
+    def notifications_paused(self) -> bool:
+        """Return whether all scheduled reminder channels are paused."""
+        if not bool(self.data.get("reminders_enabled", True)):
+            return True
+        if (
+            self.holiday_mode_active()
+            and self.holiday_policy() == "suppress_all"
+        ):
+            return True
+        return self._snoozed() or self._quiet_hours_active()
+
+    def push_notifications_paused(self) -> bool:
+        """Return whether scheduled push notifications are paused."""
+        if self.notifications_paused():
+            return True
+        return (
+            self.holiday_mode_active()
+            and self.holiday_policy() == "suppress_push"
         )
 
     async def _async_notify(
@@ -789,6 +959,8 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "snoozed_until": None,
             "last_audio_reminder_at": None,
             "last_light_reminder_at": None,
+            "silent_until_next_feed": False,
+            "disruptive_reminder_count": 0,
             "missed_deadline_for": None,
         }
         await self.store.save(data)
@@ -865,6 +1037,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "snoozed_until": None,
             "last_audio_reminder_at": None,
             "last_light_reminder_at": None,
+            "disruptive_reminder_count": 0,
             "missed_deadline_for": None,
         }
         await self.store.save(data)
@@ -904,6 +1077,18 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def set_reminders_enabled(self, enabled: bool) -> None:
         """Enable or disable every scheduled reminder channel."""
         data = {**self.data, "reminders_enabled": enabled}
+        await self.store.save(data)
+        self.async_set_updated_data(data)
+
+    async def set_channel_enabled(self, channel: str, enabled: bool) -> None:
+        """Enable or disable one scheduled reminder channel."""
+        data = {**self.data, f"{channel}_reminders_enabled": enabled}
+        await self.store.save(data)
+        self.async_set_updated_data(data)
+
+    async def set_silent_until_next_feed(self, enabled: bool) -> None:
+        """Mute or restore disruptive reminders for the current cycle."""
+        data = {**self.data, "silent_until_next_feed": enabled}
         await self.store.save(data)
         self.async_set_updated_data(data)
 

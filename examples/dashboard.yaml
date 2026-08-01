@@ -11,8 +11,10 @@ cards:
         content: |
           ## 🫙 Main Starter
 
-          {% if is_state('binary_sensor.holiday_mode', 'on') %}
-            ✈️ **Holiday mode — reminders paused**
+          {% if is_state('sensor.kitchen_main_starter_schedule_status', 'holiday_push_suppressed') %}
+            ✈️ **Holiday mode — push reminders paused**
+          {% elif is_state('sensor.kitchen_main_starter_schedule_status', 'holiday') %}
+            ✈️ **Holiday mode — all reminders paused**
           {% elif is_state('binary_sensor.kitchen_main_starter_feed_due', 'on') %}
             🔴 **Feeding is overdue**
           {% elif is_state('binary_sensor.kitchen_main_starter_feed_due_soon', 'on') %}
@@ -87,6 +89,14 @@ cards:
             entity: sensor.kitchen_main_starter_missed_feed_count
             name: Missed feeds
             icon: mdi:calendar-alert
+          - type: tile
+            entity: sensor.kitchen_main_starter_next_reminder
+            name: Next reminder
+            icon: mdi:bell-clock-outline
+          - type: tile
+            entity: switch.kitchen_main_starter_silent_until_next_feed
+            name: Silent until feed
+            icon: mdi:bell-off-outline
 
       - type: grid
         columns: 2
@@ -181,6 +191,14 @@ cards:
         entities:
           - entity: switch.kitchen_main_starter_reminders
             name: Scheduled reminders
+          - entity: switch.kitchen_main_starter_push_reminders
+            name: Push reminders
+          - entity: switch.kitchen_main_starter_audio_reminders
+            name: Audio reminders
+          - entity: switch.kitchen_main_starter_light_reminders
+            name: Light reminders
+          - entity: switch.kitchen_main_starter_silent_until_next_feed
+            name: Silent until next feed
           - entity: select.kitchen_main_starter_snooze_duration
             name: Snooze duration
           - entity: button.kitchen_main_starter_test_push_reminder

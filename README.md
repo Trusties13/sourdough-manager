@@ -18,7 +18,7 @@ Each starter is represented by one Home Assistant device.
 - Optional, separate preferred feeding times for bench and fridge storage
 - One-off 1-hour, 3-hour or tomorrow-morning deadline delays
 - Delay controls limited to the due date and overdue period
-- Existing holiday-mode sensor support for pausing reminders
+- Configurable Holiday Mode handling using an existing binary sensor
 - **Feed and refrigerate** combined action
 - Due-today, schedule-status and missed-feed sensors
 - Editable one-off next-feed deadline
@@ -30,6 +30,11 @@ Each starter is represented by one Home Assistant device.
 - Configurable reminder lead time, defaulting to 12 hours
 - Configurable overdue reminder interval
 - Master switch for all scheduled reminders
+- Independent push, audio and light channel switches
+- Optional occupancy-aware audio using `binary_sensor.house_occupied`
+- Configurable audio/light escalation limits
+- **Silent until next feed** control for the current cycle
+- Next-reminder and expanded reminder-status sensors
 - Optional overnight quiet hours
 - One or more selectable Home Assistant notification targets
 - Repeating overdue reminders until the next feed is recorded
@@ -96,6 +101,13 @@ The integration creates:
 - Last reminder sent
 - Snooze duration
 - Snooze reminders
+- Push reminders switch
+- Audio reminders switch
+- Light reminders switch
+- Silent until next feed switch
+- Next reminder
+- Reminder channels
+- Disruptive reminder count
 - Audio reminders
 - Audio voice
 - Audio targets
@@ -124,8 +136,10 @@ Open **Settings → Devices & services → Sourdough Manager → Configure**.
 - **Fridge feed frequency:** hours between feeds; default 168
 - **Preferred bench feeding time:** consistent local bench deadline time
 - **Preferred fridge feeding time:** consistent local refrigerated deadline time
-- **Holiday mode sensor:** existing binary sensor that pauses all scheduled
-  reminders while on; defaults to `binary_sensor.holiday_mode`
+- **Holiday mode sensor:** existing binary sensor; defaults to
+  `binary_sensor.holiday_mode`
+- **Holiday mode reminder policy:** suppress push only (default), suppress all
+  reminder channels, or ignore Holiday Mode
 - **Reminder lead time:** hours before the deadline; default 12, or 0 to
   disable the early reminder
 - **Notification targets:** one or more `notify` entities
@@ -133,11 +147,17 @@ Open **Settings → Devices & services → Sourdough Manager → Configure**.
 - **Quiet hours:** optional start and end times that suppress scheduled reminders
 - **Confirm recorded feeds:** optionally acknowledge successful feed logging
 - **Enable audio reminders:** speak reminders through selected media players
+- **Only speak while occupied:** optional presence gate for audio reminders
+- **Household occupied sensor:** defaults to `binary_sensor.house_occupied`
 - **Text-to-speech provider:** the Home Assistant TTS entity/voice to use
 - **Audio targets:** one or more media players
 - **Audio reminder lead time:** when spoken reminders begin
 - **Audio reminder interval:** independent cadence for repeated announcements
 - **Audio announcement volume:** temporary playback level for announcements
+- **Maximum disruptive reminders:** optional audio/light cap per feed cycle;
+  use 0 for unlimited
+- **Stop disruptive reminders after:** optional overdue-hour cap for audio and
+  light; push reminders continue
 - **Light reminder targets:** colour-capable lights to accompany reminders
 - **Light reminder colour:** selectable RGB colour, defaulting to red
 - **Light flash count:** number of reminder-colour pulses; default 3
@@ -181,7 +201,9 @@ reminder** buttons. Tests use the configured targets, trigger the same light
 flash and do not alter the last-fed time or reminder schedule. Test buttons run
 even during quiet hours or a snooze so the complete configuration can be
 checked immediately. Both tests use the same wording as a one-hour-overdue feed
-reminder, clearly prefixed as a test.
+reminder, clearly prefixed as a test. Holiday Mode defaults to suppressing push
+notifications only, so audio and any accompanying light alert continue. The
+master switch, quiet hours and snooze still pause every scheduled channel.
 
 ## Dashboard card
 
