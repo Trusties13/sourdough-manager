@@ -5,6 +5,16 @@ on:
   pull_request:
 
 jobs:
+  repository_policy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/check_repository_policy.py
+      - name: Verify repository remains public
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: test "$(gh api "repos/$GITHUB_REPOSITORY" --jq .visibility)" = "public"
+
   hassfest:
     runs-on: ubuntu-latest
     steps:
