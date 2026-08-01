@@ -6,7 +6,6 @@ import json
 import os
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_REPOSITORY = "Trusties13/sourdough-manager"
 EXPECTED_DOMAIN = "sourdough_manager"
