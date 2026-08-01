@@ -5,7 +5,6 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.helpers.entity import EntityCategory
 
 from .const import (
-    CONF_AUDIO_ENABLED,
     CONF_AUDIO_INTERVAL,
     CONF_AUDIO_LEAD_TIME,
     CONF_AUDIO_TARGETS,
@@ -17,12 +16,16 @@ from .const import (
     CONF_DUE_SOON,
     CONF_FRIDGE_INTERVAL,
     CONF_FRIDGE_PREFERRED_TIME,
+    CONF_HOLIDAY_MODE_ENTITY,
+    CONF_HOLIDAY_MODE_POLICY,
     CONF_LIGHT_COLOR,
     CONF_LIGHT_FLASH_COUNT,
     CONF_LIGHT_GAP_SECONDS,
     CONF_LIGHT_PULSE_SECONDS,
     CONF_LIGHT_TARGETS,
     CONF_NOTIFICATION_TARGETS,
+    CONF_OCCUPANCY_AUDIO_ONLY,
+    CONF_OCCUPANCY_ENTITY,
     CONF_OVERDUE_INTERVAL,
     CONF_PREFERRED_TIME,
     CONF_PREFERRED_TIME_ENABLED,
@@ -35,10 +38,13 @@ from .const import (
     DEFAULT_BENCH_INTERVAL,
     DEFAULT_DUE_SOON,
     DEFAULT_FRIDGE_INTERVAL,
+    DEFAULT_HOLIDAY_MODE_ENTITY,
+    DEFAULT_HOLIDAY_MODE_POLICY,
     DEFAULT_LIGHT_COLOR,
     DEFAULT_LIGHT_FLASH_COUNT,
     DEFAULT_LIGHT_GAP_SECONDS,
     DEFAULT_LIGHT_PULSE_SECONDS,
+    DEFAULT_OCCUPANCY_ENTITY,
     DEFAULT_OVERDUE_INTERVAL,
     DEFAULT_PREFERRED_TIME,
     DEFAULT_QUIET_END,
@@ -98,6 +104,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
             FeedHistorySensor(entry.runtime_data),
             ScheduleStatusSensor(entry.runtime_data),
             MissedFeedCountSensor(entry.runtime_data),
+            NextReminderSensor(entry.runtime_data),
+            ReminderChannelsSensor(entry.runtime_data),
+            DisruptiveReminderCountSensor(entry.runtime_data),
+            HolidayModePolicySensor(entry.runtime_data),
+            AudioOccupancyPolicySensor(entry.runtime_data),
         ]
     )
 
@@ -212,6 +223,11 @@ class ScheduleStatusSensor(StarterEntity, SensorEntity):
         "due_soon",
         "overdue",
         "holiday",
+        "holiday_push_suppressed",
+        "snoozed",
+        "quiet_hours",
+        "silent_until_feed",
+        "reminders_disabled",
     ]
 
     def __init__(self, coordinator):
@@ -220,6 +236,125 @@ class ScheduleStatusSensor(StarterEntity, SensorEntity):
     @property
     def native_value(self):
         return self.coordinator.schedule_status()
+
+
+class NextReminderSensor(StarterEntity, SensorEntity):
+    """Expose the next scheduled push or audio reminder."""
+
+    _attr_translation_key = "next_reminder"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "next_reminder")
+
+    @property
+    def native_value(self):
+        values = [
+            value
+            for value in self.coordinator.next_reminder_times().values()
+            if value is not None
+        ]
+        return min(values) if values else None
+
+    @property
+    def extra_state_attributes(self):
+        values = self.coordinator.next_reminder_times()
+        return {
+            key: value.isoformat() if value else None
+            for key, value in values.items()
+        }
+
+
+class ReminderChannelsSensor(StarterEntity, SensorEntity):
+    """Summarise reminder channel availability."""
+
+    _attr_translation_key = "reminder_channels"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "reminder_channels")
+
+    @property
+    def native_value(self):
+        enabled = [
+            channel
+            for channel in ("push", "audio", "light")
+            if self.coordinator.channel_enabled(channel)
+        ]
+        return ", ".join(enabled) if enabled else "None"
+
+    @property
+    def extra_state_attributes(self):
+        return {
+            channel: self.coordinator.channel_enabled(channel)
+            for channel in ("push", "audio", "light")
+        }
+
+
+class DisruptiveReminderCountSensor(StarterEntity, SensorEntity):
+    """Count disruptive reminder cycles since the last feed."""
+
+    _attr_translation_key = "disruptive_reminder_count"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "disruptive_reminder_count")
+
+    @property
+    def native_value(self):
+        return int(self.coordinator.data.get("disruptive_reminder_count", 0))
+
+
+class HolidayModePolicySensor(StarterEntity, SensorEntity):
+    """Display the configured Holiday Mode reminder policy."""
+
+    _attr_translation_key = "holiday_mode_policy"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "holiday_mode_policy")
+
+    @property
+    def native_value(self):
+        return self.coordinator.option(
+            CONF_HOLIDAY_MODE_POLICY, DEFAULT_HOLIDAY_MODE_POLICY
+        )
+
+    @property
+    def extra_state_attributes(self):
+        return {
+            "entity_id": self.coordinator.option(
+                CONF_HOLIDAY_MODE_ENTITY, DEFAULT_HOLIDAY_MODE_ENTITY
+            ),
+            "active": self.coordinator.holiday_mode_active(),
+        }
+
+
+class AudioOccupancyPolicySensor(StarterEntity, SensorEntity):
+    """Display whether audio reminders require occupancy."""
+
+    _attr_translation_key = "audio_occupancy_policy"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "audio_occupancy_policy")
+
+    @property
+    def native_value(self):
+        return (
+            "Only while occupied"
+            if bool(self.coordinator.option(CONF_OCCUPANCY_AUDIO_ONLY, False))
+            else "Always"
+        )
+
+    @property
+    def extra_state_attributes(self):
+        return {
+            "entity_id": self.coordinator.option(
+                CONF_OCCUPANCY_ENTITY, DEFAULT_OCCUPANCY_ENTITY
+            ),
+            "occupied": self.coordinator.occupancy_allows_audio(),
+        }
 
 
 class MissedFeedCountSensor(StarterEntity, SensorEntity):
@@ -380,7 +515,7 @@ class AudioStatusSensor(StarterEntity, SensorEntity):
     def native_value(self):
         return (
             "Enabled"
-            if bool(self.coordinator.option(CONF_AUDIO_ENABLED, False))
+            if self.coordinator.channel_enabled("audio")
             else "Disabled"
         )
 
