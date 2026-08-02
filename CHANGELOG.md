@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.13.0
 
 - Treats the scheduled feed time as guidance rather than a pass/fail deadline.
 - Removes the misleading Missed feed count sensor and its stored counter.
