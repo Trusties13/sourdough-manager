@@ -18,7 +18,7 @@
           "holiday_mode_policy": "Holiday mode reminder policy",
           "due_soon_hours": "Reminder lead time",
           "notification_targets": "Notification targets (optional)",
-          "overdue_interval_minutes": "Overdue reminder interval",
+          "overdue_interval_minutes": "Reminder repeat interval after due",
           "quiet_hours_enabled": "Enable quiet hours",
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",
@@ -32,7 +32,7 @@
           "audio_interval_minutes": "Audio reminder interval",
           "audio_volume_percent": "Audio announcement volume",
           "disruptive_max_count": "Maximum disruptive reminders per feed cycle",
-          "disruptive_max_overdue_hours": "Stop disruptive reminders after overdue hours",
+          "disruptive_max_overdue_hours": "Stop disruptive reminders after hours due",
           "light_targets": "Light reminder targets (optional)",
           "light_color": "Light reminder colour",
           "light_flash_count": "Light flash count",
@@ -43,14 +43,14 @@
           "last_fed": "Optional. Leave empty if the starter has not been fed yet.",
           "bench_interval_hours": "Hours between feeds while stored on the bench. Default: 48.",
           "fridge_interval_hours": "Hours between feeds while refrigerated. Default: 168.",
-          "preferred_time_enabled": "Align interval-based deadlines to a consistent local clock time.",
-          "bench_preferred_feed_time": "The local clock time used for bench deadlines.",
-          "fridge_preferred_feed_time": "The local clock time used for refrigerated deadlines.",
+          "preferred_time_enabled": "Align interval-based feeding times to a consistent local clock time.",
+          "bench_preferred_feed_time": "The local clock time when a bench feed becomes due.",
+          "fridge_preferred_feed_time": "The local clock time when a refrigerated feed becomes due.",
           "holiday_mode_entity": "Optional. Existing binary sensor used to detect Holiday Mode. Leave empty if Holiday Mode should not affect reminders.",
           "holiday_mode_policy": "Choose whether Holiday Mode suppresses push only, suppresses all reminders, or is ignored.",
-          "due_soon_hours": "How many hours before the deadline the first reminder is sent. Use 0 to disable the early reminder.",
+          "due_soon_hours": "How many hours before feeding is due the first reminder is sent. Use 0 to disable the early reminder.",
           "notification_targets": "Optional. Choose one or more notification entities for push reminders. Leave empty for no push delivery.",
-          "overdue_interval_minutes": "Minutes between overdue reminders. Minimum: 5.",
+          "overdue_interval_minutes": "Minutes between reminders after feeding becomes due. Minimum: 5.",
           "quiet_hours_enabled": "Suppress scheduled reminders during the configured overnight period.",
           "quiet_start": "No scheduled reminders are sent from this time.",
           "quiet_end": "Scheduled reminders resume at this time.",
@@ -60,11 +60,11 @@
           "occupancy_entity": "Optional. Binary sensor that indicates somebody is home. Used only when occupancy-aware audio is enabled. Default: binary_sensor.house_occupied.",
           "audio_tts_entity": "Optional. Select the voice or text-to-speech provider used when audio reminders are enabled.",
           "audio_targets": "Optional. Select one or more media players for audio reminders. Unavailable players are skipped.",
-          "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
+          "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when due.",
           "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze.",
           "audio_volume_percent": "Temporary volume used for spoken reminders. The previous player volume is restored after the announcement.",
           "disruptive_max_count": "Maximum audio/light reminder cycles before they stop until the next feed. Use 0 for unlimited.",
-          "disruptive_max_overdue_hours": "Stop audio and light reminders this many hours after the deadline. Push continues. Use 0 for unlimited.",
+          "disruptive_max_overdue_hours": "Stop audio and light reminders this many hours after feeding becomes due. Push continues. Use 0 for unlimited.",
           "light_targets": "Optional. Select colour-capable lights to flash whenever a push or audio feeding reminder is sent. Leave empty for no light alerts.",
           "light_color": "Choose the reminder flash colour. The default is red.",
           "light_flash_count": "Number of colour pulses in each light reminder. Default: 3.",
@@ -89,7 +89,7 @@
           "holiday_mode_policy": "Holiday mode reminder policy",
           "due_soon_hours": "Reminder lead time",
           "notification_targets": "Notification targets (optional)",
-          "overdue_interval_minutes": "Overdue reminder interval",
+          "overdue_interval_minutes": "Reminder repeat interval after due",
           "quiet_hours_enabled": "Enable quiet hours",
           "quiet_start": "Quiet hours start",
           "quiet_end": "Quiet hours end",
@@ -103,7 +103,7 @@
           "audio_interval_minutes": "Audio reminder interval",
           "audio_volume_percent": "Audio announcement volume",
           "disruptive_max_count": "Maximum disruptive reminders per feed cycle",
-          "disruptive_max_overdue_hours": "Stop disruptive reminders after overdue hours",
+          "disruptive_max_overdue_hours": "Stop disruptive reminders after hours due",
           "light_targets": "Light reminder targets (optional)",
           "light_color": "Light reminder colour",
           "light_flash_count": "Light flash count",
@@ -113,14 +113,14 @@
         "data_description": {
           "bench_interval_hours": "Hours between feeds while stored on the bench.",
           "fridge_interval_hours": "Hours between feeds while refrigerated.",
-          "preferred_time_enabled": "Align interval-based deadlines to a consistent local clock time.",
-          "bench_preferred_feed_time": "The local clock time used for bench deadlines.",
-          "fridge_preferred_feed_time": "The local clock time used for refrigerated deadlines.",
+          "preferred_time_enabled": "Align interval-based feeding times to a consistent local clock time.",
+          "bench_preferred_feed_time": "The local clock time when a bench feed becomes due.",
+          "fridge_preferred_feed_time": "The local clock time when a refrigerated feed becomes due.",
           "holiday_mode_entity": "Optional. Existing binary sensor used to detect Holiday Mode. Leave empty if Holiday Mode should not affect reminders.",
           "holiday_mode_policy": "Choose whether Holiday Mode suppresses push only, suppresses all reminders, or is ignored.",
           "due_soon_hours": "Hours before feeding is due to send the first reminder. Use 0 to disable the early reminder.",
           "notification_targets": "Optional. Choose one or more notification entities for push reminders. Leave empty for no push delivery.",
-          "overdue_interval_minutes": "Minutes between overdue reminders. Minimum: 5.",
+          "overdue_interval_minutes": "Minutes between reminders after feeding becomes due. Minimum: 5.",
           "quiet_hours_enabled": "Suppress scheduled reminders during the configured overnight period.",
           "quiet_start": "No scheduled reminders are sent from this time.",
           "quiet_end": "Scheduled reminders resume at this time.",
@@ -130,11 +130,11 @@
           "occupancy_entity": "Optional. Binary sensor that indicates somebody is home. Used only when occupancy-aware audio is enabled. Default: binary_sensor.house_occupied.",
           "audio_tts_entity": "Optional. Select the voice or text-to-speech provider used when audio reminders are enabled.",
           "audio_targets": "Optional. Select one or more media players for audio reminders. Unavailable players are skipped.",
-          "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when overdue.",
+          "audio_lead_time_hours": "Hours before feeding is due to begin spoken reminders. Use 0 to begin when due.",
           "audio_interval_minutes": "Minutes between spoken reminders. Audio also respects quiet hours and snooze.",
           "audio_volume_percent": "Temporary volume used for spoken reminders. The previous player volume is restored after the announcement.",
           "disruptive_max_count": "Maximum audio/light reminder cycles before they stop until the next feed. Use 0 for unlimited.",
-          "disruptive_max_overdue_hours": "Stop audio and light reminders this many hours after the deadline. Push continues. Use 0 for unlimited.",
+          "disruptive_max_overdue_hours": "Stop audio and light reminders this many hours after feeding becomes due. Push continues. Use 0 for unlimited.",
           "light_targets": "Optional. Select colour-capable lights to flash whenever a push or audio feeding reminder is sent. Leave empty for no light alerts.",
           "light_color": "Choose the reminder flash colour. The default is red.",
           "light_flash_count": "Number of colour pulses in each light reminder. Default: 3.",
@@ -180,7 +180,7 @@
         "name": "Notification targets"
       },
       "overdue_reminder_interval": {
-        "name": "Overdue reminder interval"
+        "name": "Reminder repeat interval after due"
       },
       "quiet_hours": {
         "name": "Quiet hours"
@@ -236,7 +236,7 @@
           "on_schedule": "On schedule",
           "due_today": "Due today",
           "due_soon": "Due soon",
-          "overdue": "Overdue",
+          "overdue": "Waiting for feed",
           "holiday": "Holiday mode",
           "holiday_push_suppressed": "Holiday mode — push suppressed",
           "snoozed": "Snoozed",
@@ -244,9 +244,6 @@
           "silent_until_feed": "Silent until next feed",
           "reminders_disabled": "Reminders disabled"
         }
-      },
-      "missed_feed_count": {
-        "name": "Missed feed count"
       },
       "next_reminder": {
         "name": "Next reminder"
@@ -367,9 +364,9 @@
         "state": {
           "feed_recorded": "Feed recorded",
           "due_soon": "Feeding due soon",
-          "overdue": "Feeding overdue",
+          "overdue": "Feed waiting",
           "location_changed": "Storage location changed",
-          "deadline_delayed": "Deadline delayed"
+          "deadline_delayed": "Feed due time changed"
         }
       }
     }

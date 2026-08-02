@@ -18,7 +18,7 @@ record_feed:
 
 set_next_feed_due:
   name: Set next feed due
-  description: Set a one-off next feeding deadline without changing the last-fed time.
+  description: Set a one-off next feeding due time without changing the last-fed time.
   fields:
     config_entry_id:
       name: Starter
@@ -28,7 +28,7 @@ set_next_feed_due:
         text:
     due_at:
       name: Due at
-      description: The custom next feeding deadline.
+      description: The custom time when the next feeding becomes due.
       required: true
       selector:
         datetime:

@@ -16,9 +16,9 @@ required.
 - **Simple feed tracking:** record a feed with one press, correct a late entry,
   or use the combined **Feed and refrigerate** action.
 - **Flexible scheduling:** configure separate bench and fridge intervals,
-  preferred feeding times, one-off delays and custom deadlines.
-- **Clear status:** see the last feed, next deadline, due-today, due-soon,
-  overdue and missed-feed information at a glance.
+  preferred feeding times, one-off delays and custom due times.
+- **Clear status:** see the last feed, next due time, due-today, due-soon and
+  waiting-for-feed information at a glance.
 - **Optional reminders:** send push, audio and light alerts independently, with
   quiet hours, snoozing, Holiday Mode policies and escalation limits.
 - **Actionable notifications:** Companion App alerts can record **Fed now** or
@@ -28,6 +28,11 @@ required.
 - **Home Assistant native:** supports multiple starters, visual automation
   events, a feeding calendar, recent feed history, Repairs and NFC or physical
   button workflows.
+
+The scheduled feed time is guidance, not a pass/fail deadline. Once that time
+passes, the starter simply remains due and reminders continue according to your
+settings. New feed-history entries retain the scheduled due time and elapsed
+minutes after due as neutral timing information.
 
 ## Installation
 
@@ -66,17 +71,17 @@ Only four values are needed to create a working feeding schedule:
 - **Fridge feed frequency** — defaults to 168 hours (7 days)
 
 **Last fed** is optional during setup. Leave it empty and press **Fed now**
-after installation, or set the date and time later. The next-feed deadline
+after installation, or set the date and time later. The next feed due time
 becomes available after the first feed is recorded.
 
 After feeding:
 
 1. Press **Fed now** on the starter device or dashboard.
 2. Sourdough Manager records the time.
-3. The next deadline is calculated from the selected storage location and its
+3. The next due time is calculated from the selected storage location and its
    configured frequency.
 
-Changing the storage location immediately recalculates the deadline from the
+Changing the storage location immediately recalculates the due time from the
 existing last-fed time.
 
 ## Optional configuration
@@ -88,7 +93,7 @@ any of the following features:
 | --- | --- |
 | Consistent clock times | Preferred bench and fridge feeding times |
 | Push reminders | One or more `notify` entities and an optional feed confirmation |
-| Reminder timing | Lead time, overdue interval, quiet hours and snooze duration |
+| Reminder timing | Lead time, repeat interval after due, quiet hours and snooze |
 | Holiday Mode | An existing binary sensor and push/all/ignore policy |
 | Spoken reminders | A TTS provider, media players, volume and repeat interval |
 | Presence-aware audio | An existing household-occupied binary sensor |
@@ -101,16 +106,16 @@ notification, media-player, light, Holiday Mode or occupancy entities.
 
 ## Scheduling and corrections
 
-Enable **Use a preferred feeding time** to align interval-based deadlines to a
+Enable **Use a preferred feeding time** to align interval-based due times to a
 consistent local clock time. Bench and fridge storage can use different times.
 
 When a feed is due today or overdue, the device exposes controls to delay the
-deadline by one hour, three hours or until tomorrow morning. **Next feed date**
+due time by one hour, three hours or until tomorrow morning. **Next feed date**
 and **Next feed time** remain available whenever a schedule exists, allowing
 the next feed to be rescheduled at any time without changing the last-fed time.
 
 If a feed was logged late, edit **Last fed date** and **Last fed time** on the
-starter device. This recalculates the deadline and resets the reminder cycle.
+starter device. This recalculates the due time and resets the reminder cycle.
 
 ## Reminders
 
@@ -120,9 +125,10 @@ switch. Push, audio and light channels can also be enabled independently.
 The normal reminder sequence is:
 
 1. A due-soon reminder is sent at the configured lead time.
-2. A due reminder is sent at the deadline.
-3. Overdue reminders repeat at the configured interval until a feed is
-   recorded, the cycle is snoozed, or reminders are disabled.
+2. A due reminder is sent when the feed becomes due.
+3. Reminders repeat at the configured interval while the starter is waiting
+   for a feed, until a feed is recorded, the cycle is snoozed, or reminders
+   are disabled.
 
 Quiet hours pause scheduled reminders without discarding them. Holiday Mode can
 suppress push only, suppress every reminder channel, or be ignored. **Silent
@@ -130,9 +136,10 @@ until next feed** pauses the current reminder cycle and resets automatically
 when the next feed is recorded.
 
 Companion App notifications include **Fed now** and **Snooze** actions. Stable
-notification tags ensure repeated overdue reminders replace the previous alert
-instead of stacking. Overdue titles and wording become progressively firmer as
-the delay increases, and the overdue notification is cleared after feeding.
+notification tags ensure repeated reminders replace the previous alert instead
+of stacking. Reminder wording reports how long the starter has been due without
+treating the due time as a failure, and the notification is cleared after
+feeding.
 
 ### Audio reminders
 
@@ -162,7 +169,7 @@ disabled, snoozed or within quiet hours.
 A dependency-free Lovelace example is provided in
 [`examples/dashboard.yaml`](examples/dashboard.yaml). It includes:
 
-- schedule status, last feed and next deadline
+- schedule status, last feed and next due time
 - storage and reminder controls
 - **Fed now**, **Snooze** and reminder-test actions
 - late-entry, rescheduling and one-off delay controls
@@ -207,7 +214,7 @@ data:
 
 Omit `fed_at` to record the current time.
 
-Set a one-off custom deadline without changing the last-fed time:
+Set a one-off custom due time without changing the last-fed time:
 
 ```yaml
 action: sourdough_manager.set_next_feed_due
@@ -223,10 +230,10 @@ Sourdough Manager fires these Home Assistant events:
 - `sourdough_manager_feed_overdue`
 - `sourdough_manager_location_changed`
 
-Events include the starter's config-entry ID, last-fed time, next deadline and
+Events include the starter's config-entry ID, last-fed time, next due time and
 storage location. The same lifecycle is exposed through the starter's native
-event entity, including `deadline_delayed`, so events are selectable in the
-visual automation editor. Examples are available in
+event entity, including the backwards-compatible `deadline_delayed` event, so
+events are selectable in the visual automation editor. Examples are available in
 [`examples/automations.yaml`](examples/automations.yaml).
 
 ## Configuration health

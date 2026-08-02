@@ -83,6 +83,7 @@ from .models import (
     due_today_or_overdue,
     human_duration,
     light_restore_data,
+    minutes_after_due,
     next_feed_due,
     overdue_notification_copy,
     parse_clock,
@@ -128,7 +129,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._update_configuration_issue()
 
     def next_due(self) -> datetime | None:
-        """Return the current deadline."""
+        """Return the current feeding due time."""
         override = parse_datetime(self.data.get("deadline_override"))
         if override is not None:
             return override
@@ -158,7 +159,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return dt_util.as_utc(aligned) if aligned else None
 
     def delay_available(self) -> bool:
-        """Return whether a deadline may be delayed today."""
+        """Return whether a due time may be delayed today."""
         due = self.next_due()
         return due_today_or_overdue(
             dt_util.as_local(due) if due else None,
@@ -166,7 +167,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     def due_today(self) -> bool:
-        """Return whether the deadline falls on the current local date."""
+        """Return whether the due time falls on the current local date."""
         due = self.next_due()
         return bool(
             due
@@ -325,7 +326,6 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if is_due_soon:
             reminder_sent = await self._async_send_reminder()
         if is_due:
-            await self._async_record_missed_deadline()
             reminder_sent = (
                 await self._async_send_overdue_reminder() or reminder_sent
             )
@@ -349,22 +349,6 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._was_due = is_due
         self._was_due_soon = is_due_soon
         return self.data
-
-    async def _async_record_missed_deadline(self) -> None:
-        """Count each deadline once when it first becomes overdue."""
-        due = self.next_due()
-        if due is None:
-            return
-        due_key = due.isoformat()
-        if self.data.get("missed_deadline_for") == due_key:
-            return
-        data = {
-            **self.data,
-            "missed_feed_count": int(self.data.get("missed_feed_count", 0)) + 1,
-            "missed_deadline_for": due_key,
-        }
-        await self.store.save(data)
-        self.async_set_updated_data(data)
 
     def invalid_targets(self) -> list[str]:
         """Return configured entities that no longer exist."""
@@ -423,7 +407,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     async def _async_send_reminder(self) -> bool:
-        """Send at most one configured notification for the current deadline."""
+        """Send at most one configured notification for the current due time."""
         if not self.channel_enabled("push"):
             return False
         if self.push_notifications_paused():
@@ -942,11 +926,15 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         fed_at = fed_at or now
         if fed_at.tzinfo is None:
             fed_at = fed_at.replace(tzinfo=UTC)
+        due_at = self.next_due()
+        elapsed_after_due = minutes_after_due(fed_at, due_at)
         history = list(self.data.get("feed_history", []))
         history.append(
             {
                 "fed_at": fed_at.isoformat(),
                 "location": self.data["location"],
+                "due_at": due_at.isoformat() if due_at else None,
+                "minutes_after_due": elapsed_after_due,
             }
         )
         data = {
@@ -961,7 +949,6 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "last_light_reminder_at": None,
             "silent_until_next_feed": False,
             "disruptive_reminder_count": 0,
-            "missed_deadline_for": None,
         }
         await self.store.save(data)
         self._was_due = False
@@ -991,14 +978,14 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.async_set_updated_data(data)
 
     async def delay_next_feed(self) -> None:
-        """Move the current deadline by the selected one-off delay."""
+        """Move the current due time by the selected one-off delay."""
         if not self.delay_available():
             raise HomeAssistantError(
                 "The next feeding can only be delayed on its due date or while overdue"
             )
         current_due = self.next_due()
         if current_due is None:
-            raise HomeAssistantError("Record a feed before delaying its deadline")
+            raise HomeAssistantError("Record a feed before delaying its due time")
         option = self.data.get("delay_option", "1")
         if option == "tomorrow_morning":
             local_now = dt_util.now()
@@ -1021,7 +1008,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await self.set_next_feed_due(delayed)
 
     async def set_next_feed_due(self, due_at: datetime) -> None:
-        """Set a one-off explicit next-feed deadline."""
+        """Set a one-off explicit next-feed due time."""
         if due_at.tzinfo is None:
             due_at = due_at.replace(tzinfo=dt_util.get_default_time_zone())
         due_at = dt_util.as_utc(due_at)
@@ -1034,7 +1021,6 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "last_audio_reminder_at": None,
             "last_light_reminder_at": None,
             "disruptive_reminder_count": 0,
-            "missed_deadline_for": None,
         }
         await self.store.save(data)
         self._was_due = False
@@ -1102,7 +1088,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.async_set_updated_data(data)
 
     async def set_location(self, location: str) -> None:
-        """Change storage location and immediately recalculate the deadline."""
+        """Change storage location and immediately recalculate the due time."""
         if location == self.data["location"]:
             return
         data = {

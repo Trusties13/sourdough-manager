@@ -16,7 +16,7 @@ cards:
           {% elif is_state('sensor.kitchen_main_starter_schedule_status', 'holiday') %}
             ✈️ **Holiday mode — all reminders paused**
           {% elif is_state('binary_sensor.kitchen_main_starter_feed_due', 'on') %}
-            🔴 **Feeding is overdue**
+            🔴 **Starter is waiting for a feed**
           {% elif is_state('binary_sensor.kitchen_main_starter_feed_due_soon', 'on') %}
             🟠 **Feeding is due soon**
           {% else %}
@@ -35,7 +35,7 @@ cards:
         card:
           type: tile
           entity: sensor.main_starter_next_feed_due
-          name: Feed overdue
+          name: Feed is due
           icon: mdi:alert-circle
           color: red
           tap_action:
@@ -85,10 +85,6 @@ cards:
             entity: sensor.kitchen_main_starter_schedule_status
             name: Schedule
             icon: mdi:calendar-check
-          - type: tile
-            entity: sensor.kitchen_main_starter_missed_feed_count
-            name: Missed feeds
-            icon: mdi:calendar-alert
           - type: tile
             entity: sensor.kitchen_main_starter_next_reminder
             name: Next reminder
@@ -155,7 +151,7 @@ cards:
             state: "off"
         card:
           type: entities
-          title: Reschedule overdue feed
+          title: Reschedule current feed
           show_header_toggle: false
           entities:
             - entity: select.kitchen_main_starter_delay_duration
