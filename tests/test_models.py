@@ -63,6 +63,19 @@ def test_overdue_hours():
     assert models.overdue_hours(due, datetime(2026, 7, 27, 8, tzinfo=UTC)) == 0
 
 
+def test_minutes_after_due_is_neutral_timing_data():
+    due = datetime(2026, 7, 27, 9, tzinfo=UTC)
+    assert models.minutes_after_due(
+        datetime(2026, 7, 27, 9, 20, tzinfo=UTC), due
+    ) == 20
+    assert models.minutes_after_due(
+        datetime(2026, 7, 27, 8, 40, tzinfo=UTC), due
+    ) == 0
+    assert models.minutes_after_due(
+        datetime(2026, 7, 27, 9, tzinfo=UTC), None
+    ) is None
+
+
 def test_human_duration():
     assert models.human_duration(0) == "Disabled"
     assert models.human_duration(0.5) == "30 minutes"
@@ -92,18 +105,18 @@ def test_human_clock_range():
     )
 
 
-def test_overdue_notification_copy_gets_firmer():
+def test_overdue_notification_copy_reports_elapsed_due_time_neutrally():
     assert models.overdue_notification_copy("Main Starter", 1)[0] == (
         "Main Starter feeding is due"
     )
     assert models.overdue_notification_copy("Main Starter", 3)[0] == (
-        "Main Starter feeding is overdue"
+        "Main Starter is waiting for a feed"
     )
     assert models.overdue_notification_copy("Main Starter", 13)[0] == (
-        "Main Starter needs feeding"
+        "Main Starter is still waiting for a feed"
     )
     assert models.overdue_notification_copy("Main Starter", 25)[0] == (
-        "Main Starter is seriously overdue"
+        "Main Starter feeding remains due"
     )
 
 
@@ -179,8 +192,6 @@ def test_migrates_existing_active_cycle_and_location():
         "feed_history": [{"unused": True}],
         "last_event_type": None,
         "last_event_at": None,
-        "missed_feed_count": 0,
-        "missed_deadline_for": None,
     }
 
 

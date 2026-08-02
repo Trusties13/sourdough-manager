@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.13.0
+
+- Treats the scheduled feed time as guidance rather than a pass/fail deadline.
+- Removes the misleading Missed feed count sensor and its stored counter.
+- Uses neutral reminder wording that reports how long a feed has been due.
+- Records the scheduled due time and minutes after due in new feed-history entries.
+
 ## 1.11.2
 
 - Clearly identifies the minimum required setup and optional reminder integrations in the setup form, options form and README.

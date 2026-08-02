@@ -30,7 +30,7 @@ class FeedDueSensor(StarterEntity, BinarySensorEntity):
 
 
 class FeedDueSoonSensor(StarterEntity, BinarySensorEntity):
-    """Whether the starter is approaching its deadline."""
+    """Whether the starter is approaching its next due time."""
 
     _attr_translation_key = "feed_due_soon"
 
@@ -43,7 +43,7 @@ class FeedDueSoonSensor(StarterEntity, BinarySensorEntity):
 
 
 class FeedDueTodaySensor(StarterEntity, BinarySensorEntity):
-    """Whether the current deadline falls on the local date."""
+    """Whether the current due time falls on the local date."""
 
     _attr_translation_key = "feed_due_today"
 

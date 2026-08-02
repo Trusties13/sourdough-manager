@@ -9,7 +9,7 @@
 - [ ] Hassfest passes.
 - [ ] Tests and linting pass.
 - [ ] Repository identity, integration domain, ownership and visibility are unchanged.
-- [ ] `hacs.json`, required manifest fields and brand assets remain intact.
+- [ ] `hacs.json`, required manifest fields and the in-component brand asset remain intact.
 - [ ] No experimental or broken release is being published.
 
 ## Validation

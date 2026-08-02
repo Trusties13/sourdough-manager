@@ -16,7 +16,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class FeedingCalendar(StarterEntity, CalendarEntity):
-    """Expose completed feeds and the next deadline as calendar events."""
+    """Expose completed feeds and the next due time as calendar events."""
 
     _attr_translation_key = "feeding_calendar"
 
@@ -25,7 +25,7 @@ class FeedingCalendar(StarterEntity, CalendarEntity):
 
     @property
     def event(self) -> CalendarEvent | None:
-        """Return the current or next feeding deadline."""
+        """Return the current or next feeding due time."""
         due = self.coordinator.next_due()
         if due is None:
             return None
@@ -37,18 +37,22 @@ class FeedingCalendar(StarterEntity, CalendarEntity):
         )
 
     async def async_get_events(self, hass, start_date, end_date):
-        """Return feed-history events and the next deadline in a time range."""
+        """Return feed-history events and the next due time in a time range."""
         events: list[CalendarEvent] = []
         for item in self.coordinator.data.get("feed_history", []):
             fed_at = parse_datetime(item.get("fed_at"))
             if fed_at is None or not start_date <= fed_at < end_date:
                 continue
+            timing = item.get("minutes_after_due")
+            description = f"Storage: {item.get('location', 'unknown')}"
+            if isinstance(timing, int) and timing > 0:
+                description += f"; fed {timing} minutes after due time"
             events.append(
                 CalendarEvent(
                     start=fed_at,
                     end=fed_at + timedelta(minutes=15),
                     summary=f"{self.coordinator.entry.title} fed",
-                    description=f"Storage: {item.get('location', 'unknown')}",
+                    description=description,
                 )
             )
         due = self.coordinator.next_due()

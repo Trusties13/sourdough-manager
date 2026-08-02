@@ -29,7 +29,7 @@ def next_feed_due(
     bench_hours: float,
     fridge_hours: float,
 ) -> datetime | None:
-    """Calculate the next feeding deadline."""
+    """Calculate when the next feeding becomes due."""
     if last_fed is None:
         return None
     interval = fridge_hours if location == LOCATION_FRIDGE else bench_hours
@@ -40,7 +40,7 @@ def align_deadline_to_preferred_time(
     due: datetime | None,
     preferred: str | time,
 ) -> datetime | None:
-    """Align a deadline to a preferred clock time in its own timezone."""
+    """Align a due time to a preferred clock time in its own timezone."""
     if due is None:
         return None
     clock = parse_clock(preferred)
@@ -70,7 +70,7 @@ def due_today_or_overdue(
     due: datetime | None,
     now: datetime | None = None,
 ) -> bool:
-    """Return whether a deadline is on or before the current local date."""
+    """Return whether a due time is on or before the current local date."""
     if due is None:
         return False
     now = now or datetime.now(due.tzinfo or UTC)
@@ -85,6 +85,13 @@ def overdue_hours(due: datetime | None, now: datetime | None = None) -> float:
         return 0.0
     delta = ((now or datetime.now(UTC)) - due).total_seconds() / 3600
     return round(max(0.0, delta), 1)
+
+
+def minutes_after_due(fed_at: datetime, due: datetime | None) -> int | None:
+    """Return neutral elapsed minutes after due, or zero when fed early."""
+    if due is None:
+        return None
+    return max(0, int((fed_at - due).total_seconds() // 60))
 
 
 def human_duration(hours: float) -> str:
@@ -138,7 +145,7 @@ def human_clock_range(start: str | time, end: str | time) -> str:
 def overdue_notification_copy(
     starter_name: str, hours_overdue: float
 ) -> tuple[str, str]:
-    """Return progressively firmer overdue notification copy."""
+    """Return neutral copy describing time elapsed since feeding was due."""
     delay = human_duration(hours_overdue)
     if hours_overdue < 2:
         return (
@@ -147,17 +154,17 @@ def overdue_notification_copy(
         )
     if hours_overdue < 12:
         return (
-            f"{starter_name} feeding is overdue",
-            f"{starter_name} is {delay} overdue. Please feed it when you can.",
+            f"{starter_name} is waiting for a feed",
+            f"{starter_name} has been due for {delay}. Feed it when you can.",
         )
     if hours_overdue < 24:
         return (
-            f"{starter_name} needs feeding",
-            f"{starter_name} is {delay} overdue and needs attention soon.",
+            f"{starter_name} is still waiting for a feed",
+            f"{starter_name} has been due for {delay}.",
         )
     return (
-        f"{starter_name} is seriously overdue",
-        f"{starter_name} is {delay} overdue. Please feed it as soon as possible.",
+        f"{starter_name} feeding remains due",
+        f"{starter_name} has been due for {delay}. Feed it when convenient.",
     )
 
 
@@ -228,6 +235,4 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         "feed_history": list(old.get("feed_history", []))[-20:],
         "last_event_type": old.get("last_event_type"),
         "last_event_at": old.get("last_event_at"),
-        "missed_feed_count": int(old.get("missed_feed_count", 0)),
-        "missed_deadline_for": old.get("missed_deadline_for"),
     }
