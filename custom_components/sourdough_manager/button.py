@@ -67,7 +67,7 @@ class TestAudioReminderButton(StarterEntity, ButtonEntity):
 
 
 class DelayNextFeedButton(StarterEntity, ButtonEntity):
-    """Apply the selected one-off deadline delay."""
+    """Apply the selected one-off due-time delay."""
 
     _attr_translation_key = "delay_next_feed"
 

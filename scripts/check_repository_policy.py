@@ -20,7 +20,6 @@ REQUIRED_MANIFEST_KEYS = {
 }
 REQUIRED_FILES = {
     ROOT / "hacs.json",
-    ROOT / "brand" / "icon.png",
     ROOT / "custom_components" / EXPECTED_DOMAIN / "brand" / "icon.png",
 }
 

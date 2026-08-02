@@ -103,7 +103,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
             PreferredFeedTimeSensor(entry.runtime_data),
             FeedHistorySensor(entry.runtime_data),
             ScheduleStatusSensor(entry.runtime_data),
-            MissedFeedCountSensor(entry.runtime_data),
             NextReminderSensor(entry.runtime_data),
             ReminderChannelsSensor(entry.runtime_data),
             DisruptiveReminderCountSensor(entry.runtime_data),
@@ -128,7 +127,7 @@ class LastFedSensor(StarterEntity, SensorEntity):
 
 
 class NextFeedDueSensor(StarterEntity, SensorEntity):
-    """Next feeding deadline."""
+    """Next feeding due time."""
 
     _attr_translation_key = "next_feed_due"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
@@ -355,20 +354,6 @@ class AudioOccupancyPolicySensor(StarterEntity, SensorEntity):
             ),
             "occupied": self.coordinator.occupancy_allows_audio(),
         }
-
-
-class MissedFeedCountSensor(StarterEntity, SensorEntity):
-    """Count deadlines that became overdue."""
-
-    _attr_translation_key = "missed_feed_count"
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(self, coordinator):
-        super().__init__(coordinator, "missed_feed_count")
-
-    @property
-    def native_value(self):
-        return int(self.coordinator.data.get("missed_feed_count", 0))
 
 
 class DurationSettingSensor(StarterEntity, SensorEntity):
