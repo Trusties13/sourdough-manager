@@ -43,6 +43,8 @@ class StarterStore:
                 "deadline_override": None,
                 "delay_option": "1",
                 "feed_history": [],
+                "selected_feed_id": None,
+                "feed_edit_at": None,
                 "last_event_type": None,
                 "last_event_at": None,
             }

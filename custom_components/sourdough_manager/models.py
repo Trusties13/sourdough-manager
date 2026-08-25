@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, time, timedelta
 from typing import Any
+from uuid import NAMESPACE_URL, uuid5
 
 LOCATION_FRIDGE = "refrigerator"
 
@@ -21,6 +22,69 @@ def parse_datetime(value: str | datetime | None) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
     return parsed
+
+
+def feed_id(feed: dict[str, Any], index: int = 0) -> str:
+    """Return a stable ID, deriving one for a legacy feed when necessary."""
+    existing = feed.get("id")
+    if isinstance(existing, str) and existing:
+        return existing
+    identity = ":".join(
+        (
+            str(index),
+            str(feed.get("fed_at", "")),
+            str(feed.get("location", "")),
+            str(feed.get("due_at", "")),
+        )
+    )
+    return uuid5(NAMESPACE_URL, f"sourdough-manager:{identity}").hex
+
+
+def normalise_feed_history(history: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Add stable IDs to stored feed records without changing their order."""
+    return [{**item, "id": feed_id(item, index)} for index, item in enumerate(history)]
+
+
+def newest_feed(history: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Return the newest valid feed record."""
+    valid = [item for item in history if parse_datetime(item.get("fed_at"))]
+    if not valid:
+        return None
+    return max(valid, key=lambda item: parse_datetime(item.get("fed_at")))
+
+
+def update_feed_record(
+    history: list[dict[str, Any]], selected_id: str, fed_at: datetime
+) -> list[dict[str, Any]]:
+    """Replace one feed timestamp in place and recalculate its timing metadata."""
+    updated: list[dict[str, Any]] = []
+    found = False
+    for item in history:
+        if item.get("id") != selected_id:
+            updated.append(item)
+            continue
+        due_at = parse_datetime(item.get("due_at"))
+        updated.append(
+            {
+                **item,
+                "fed_at": fed_at.isoformat(),
+                "minutes_after_due": minutes_after_due(fed_at, due_at),
+            }
+        )
+        found = True
+    if not found:
+        raise ValueError("The selected feed no longer exists")
+    return updated
+
+
+def delete_feed_record(
+    history: list[dict[str, Any]], selected_id: str
+) -> list[dict[str, Any]]:
+    """Delete exactly one selected feed record."""
+    updated = [item for item in history if item.get("id") != selected_id]
+    if len(updated) == len(history):
+        raise ValueError("The selected feed no longer exists")
+    return updated
 
 
 def next_feed_due(
@@ -210,8 +274,19 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
     if not last_fed and (cycle := old.get("active_cycle")):
         last_fed = cycle.get("fed_at")
     location = old.get("location", default_location)
+    history = normalise_feed_history(list(old.get("feed_history", []))[-20:])
+    selected_id = old.get("selected_feed_id")
+    if not any(item["id"] == selected_id for item in history):
+        latest = newest_feed(history)
+        selected_id = latest["id"] if latest else None
+    selected = next(
+        (item for item in history if item["id"] == selected_id), None
+    )
+    edit_at = old.get("feed_edit_at")
+    if parse_datetime(edit_at) is None:
+        edit_at = selected.get("fed_at") if selected else None
     return {
-        "schema_version": 7,
+        "schema_version": 8,
         "last_fed": last_fed,
         "location": location,
         "location_changed_at": old.get("location_changed_at"),
@@ -232,7 +307,9 @@ def migrate_storage(old: dict[str, Any], default_location: str) -> dict[str, Any
         ),
         "deadline_override": old.get("deadline_override"),
         "delay_option": old.get("delay_option", "1"),
-        "feed_history": list(old.get("feed_history", []))[-20:],
+        "feed_history": history,
+        "selected_feed_id": selected_id,
+        "feed_edit_at": edit_at,
         "last_event_type": old.get("last_event_type"),
         "last_event_at": old.get("last_event_at"),
     }

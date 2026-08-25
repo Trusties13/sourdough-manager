@@ -114,8 +114,12 @@ due time by one hour, three hours or until tomorrow morning. **Next feed date**
 and **Next feed time** remain available whenever a schedule exists, allowing
 the next feed to be rescheduled at any time without changing the last-fed time.
 
-If a feed was logged late, edit **Last fed date** and **Last fed time** on the
-starter device. This recalculates the due time and resets the reminder cycle.
+To correct history, choose **Feed to edit**, stage a **Corrected feed date** and
+**Corrected feed time**, then press **Apply feed correction**. The selected
+record is updated in place rather than logged as another feed. Use **Delete
+selected feed** to remove an incorrect record; the example dashboard adds a
+confirmation prompt before deletion. Editing or deleting history recalculates
+the latest feed, next due time and reminder cycle.
 
 ## Reminders
 
