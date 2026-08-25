@@ -170,7 +170,7 @@ def test_migrates_existing_active_cycle_and_location():
         "bench",
     )
     assert migrated == {
-        "schema_version": 7,
+        "schema_version": 8,
         "last_fed": "2026-07-25T09:00:00+00:00",
         "location": "refrigerator",
         "location_changed_at": None,
@@ -189,7 +189,14 @@ def test_migrates_existing_active_cycle_and_location():
         "disruptive_reminder_count": 0,
         "deadline_override": None,
         "delay_option": "1",
-        "feed_history": [{"unused": True}],
+        "feed_history": [
+            {
+                "unused": True,
+                "id": models.feed_id({"unused": True}),
+            }
+        ],
+        "selected_feed_id": None,
+        "feed_edit_at": None,
         "last_event_type": None,
         "last_event_at": None,
     }
@@ -202,4 +209,64 @@ def test_migration_retains_only_twenty_feed_records():
     ]
     migrated = models.migrate_storage({"feed_history": history}, "bench")
     assert len(migrated["feed_history"]) == 20
-    assert migrated["feed_history"][0] == history[5]
+    assert {
+        key: value
+        for key, value in migrated["feed_history"][0].items()
+        if key != "id"
+    } == history[5]
+    assert all(item.get("id") for item in migrated["feed_history"])
+
+
+def test_migration_adds_stable_ids_and_selects_newest_feed():
+    history = [
+        {"fed_at": "2026-07-25T09:00:00+00:00", "location": "bench"},
+        {
+            "fed_at": "2026-07-26T09:00:00+00:00",
+            "location": "refrigerator",
+        },
+    ]
+    first = models.migrate_storage({"feed_history": history}, "bench")
+    second = models.migrate_storage(first, "bench")
+
+    assert first["feed_history"] == second["feed_history"]
+    assert first["selected_feed_id"] == first["feed_history"][1]["id"]
+    assert first["feed_edit_at"] == "2026-07-26T09:00:00+00:00"
+
+
+def test_update_feed_record_replaces_selected_entry_without_appending():
+    history = [
+        {
+            "id": "first",
+            "fed_at": "2026-07-25T09:00:00+00:00",
+            "due_at": "2026-07-25T08:00:00+00:00",
+            "location": "bench",
+            "minutes_after_due": 60,
+        },
+        {
+            "id": "second",
+            "fed_at": "2026-07-26T09:00:00+00:00",
+            "due_at": None,
+            "location": "refrigerator",
+            "minutes_after_due": None,
+        },
+    ]
+
+    updated = models.update_feed_record(
+        history, "first", datetime(2026, 7, 25, 8, 30, tzinfo=UTC)
+    )
+
+    assert len(updated) == 2
+    assert updated[0]["fed_at"] == "2026-07-25T08:30:00+00:00"
+    assert updated[0]["minutes_after_due"] == 30
+    assert updated[0]["location"] == "bench"
+    assert updated[1] == history[1]
+
+
+def test_delete_feed_record_removes_only_selected_entry():
+    history = [
+        {"id": "first", "fed_at": "2026-07-25T09:00:00+00:00"},
+        {"id": "second", "fed_at": "2026-07-26T09:00:00+00:00"},
+    ]
+
+    assert models.delete_feed_record(history, "first") == [history[1]]
+    assert models.newest_feed(history) == history[1]

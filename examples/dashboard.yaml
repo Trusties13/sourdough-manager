@@ -42,7 +42,7 @@ cards:
             action: perform-action
             perform_action: button.press
             target:
-              entity_id: button.kitchen_main_starter_fed_now
+              entity_id: button.main_starter_fed_now
 
       - type: conditional
         conditions:
@@ -60,7 +60,7 @@ cards:
             action: perform-action
             perform_action: button.press
             target:
-              entity_id: button.kitchen_main_starter_fed_now
+              entity_id: button.main_starter_fed_now
 
       - type: grid
         columns: 2
@@ -107,7 +107,7 @@ cards:
               action: perform-action
               perform_action: button.press
               target:
-                entity_id: button.kitchen_main_starter_fed_now
+                entity_id: button.main_starter_fed_now
           - type: button
             entity: button.kitchen_main_starter_snooze_reminders
             name: Snooze
@@ -208,10 +208,25 @@ cards:
             name: Test audio and light
 
       - type: entities
-        title: Correct a late entry
+        title: Edit feed history
         show_header_toggle: false
         entities:
+          - entity: select.kitchen_main_starter_feed_to_edit
+            name: Feed to edit
           - entity: date.kitchen_main_starter_last_fed_date
-            name: Last fed date
+            name: Corrected date
           - entity: time.kitchen_main_starter_last_fed_time
-            name: Last fed time
+            name: Corrected time
+          - entity: button.kitchen_main_starter_apply_feed_correction
+            name: Apply correction
+          - type: button
+            entity: button.kitchen_main_starter_delete_selected_feed
+            name: Delete selected feed
+            action_name: Delete
+            tap_action:
+              action: perform-action
+              perform_action: button.press
+              target:
+                entity_id: button.kitchen_main_starter_delete_selected_feed
+              confirmation:
+                text: Permanently delete the selected feed record?

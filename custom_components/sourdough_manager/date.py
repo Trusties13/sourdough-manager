@@ -22,7 +22,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class LastFedDate(StarterEntity, DateEntity):
-    """Allow the date of a late feeding entry to be corrected."""
+    """Stage a corrected date for the selected feed."""
 
     _attr_translation_key = "last_fed_date"
     _attr_entity_category = EntityCategory.CONFIG
@@ -32,17 +32,21 @@ class LastFedDate(StarterEntity, DateEntity):
 
     @property
     def native_value(self) -> date | None:
-        value = parse_datetime(self.coordinator.data.get("last_fed"))
+        value = parse_datetime(self.coordinator.data.get("feed_edit_at"))
         return dt_util.as_local(value).date() if value else None
 
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.selected_feed() is not None
+
     async def async_set_value(self, value: date) -> None:
-        current = parse_datetime(self.coordinator.data.get("last_fed"))
+        current = parse_datetime(self.coordinator.data.get("feed_edit_at"))
         current_local = dt_util.as_local(current) if current else dt_util.now()
         whole_minute = current_local.time().replace(second=0, microsecond=0)
         combined = datetime.combine(value, whole_minute).replace(
             tzinfo=dt_util.get_default_time_zone()
         )
-        await self.coordinator.record_feed(dt_util.as_utc(combined))
+        await self.coordinator.set_feed_edit_at(dt_util.as_utc(combined))
 
 
 class NextFeedDate(StarterEntity, DateEntity):

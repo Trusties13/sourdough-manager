@@ -14,6 +14,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             TestAudioReminderButton(entry.runtime_data),
             DelayNextFeedButton(entry.runtime_data),
             FeedAndRefrigerateButton(entry.runtime_data),
+            ApplyFeedCorrectionButton(entry.runtime_data),
+            DeleteSelectedFeedButton(entry.runtime_data),
         ]
     )
 
@@ -92,3 +94,35 @@ class FeedAndRefrigerateButton(StarterEntity, ButtonEntity):
 
     async def async_press(self):
         await self.coordinator.record_feed_in_fridge()
+
+
+class ApplyFeedCorrectionButton(StarterEntity, ButtonEntity):
+    """Apply staged date and time changes to the selected feed."""
+
+    _attr_translation_key = "apply_feed_correction"
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "apply_feed_correction")
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.selected_feed() is not None
+
+    async def async_press(self):
+        await self.coordinator.apply_selected_feed_edit()
+
+
+class DeleteSelectedFeedButton(StarterEntity, ButtonEntity):
+    """Delete the selected feed-history record."""
+
+    _attr_translation_key = "delete_selected_feed"
+
+    def __init__(self, coordinator):
+        super().__init__(coordinator, "delete_selected_feed")
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.selected_feed() is not None
+
+    async def async_press(self):
+        await self.coordinator.delete_selected_feed()

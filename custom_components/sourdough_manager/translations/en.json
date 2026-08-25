@@ -293,11 +293,17 @@
       },
       "feed_and_refrigerate": {
         "name": "Feed and refrigerate"
+      },
+      "apply_feed_correction": {
+        "name": "Apply feed correction"
+      },
+      "delete_selected_feed": {
+        "name": "Delete selected feed"
       }
     },
     "date": {
       "last_fed_date": {
-        "name": "Last fed date"
+        "name": "Corrected feed date"
       },
       "next_feed_date": {
         "name": "Next feed date"
@@ -305,7 +311,7 @@
     },
     "time": {
       "last_fed_clock": {
-        "name": "Last fed time"
+        "name": "Corrected feed time"
       },
       "next_feed_time": {
         "name": "Next feed time"
@@ -334,6 +340,9 @@
           "3": "3 hours",
           "tomorrow_morning": "Tomorrow morning"
         }
+      },
+      "feed_to_edit": {
+        "name": "Feed to edit"
       }
     },
     "switch": {

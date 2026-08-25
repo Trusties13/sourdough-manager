@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.14.0
+
+- Adds a recent-feed selector with stable record IDs.
+- Corrects a selected feed in place instead of appending duplicate history.
+- Adds a delete-selected-feed action and recalculates the latest feed afterward.
+- Updates the example dashboard with edit controls and deletion confirmation.
+- Corrects the example dashboard's Fed now action target.
+
 ## 1.13.0
 
 - Treats the scheduled feed time as guidance rather than a pass/fail deadline.

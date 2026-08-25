@@ -5,6 +5,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import uuid4
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -80,16 +81,19 @@ from .const import (
 from .models import (
     align_deadline_to_preferred_time,
     audio_reminder_due,
+    delete_feed_record,
     due_today_or_overdue,
     human_duration,
     light_restore_data,
     minutes_after_due,
+    newest_feed,
     next_feed_due,
     overdue_notification_copy,
     parse_clock,
     parse_datetime,
     quiet_hours_active,
     schedule_state,
+    update_feed_record,
 )
 from .storage import StarterStore
 
@@ -931,6 +935,7 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         history = list(self.data.get("feed_history", []))
         history.append(
             {
+                "id": uuid4().hex,
                 "fed_at": fed_at.isoformat(),
                 "location": self.data["location"],
                 "due_at": due_at.isoformat() if due_at else None,
@@ -942,6 +947,8 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "last_fed": fed_at.isoformat(),
             "deadline_override": None,
             "feed_history": history[-MAX_FEED_HISTORY:],
+            "selected_feed_id": history[-1]["id"],
+            "feed_edit_at": fed_at.isoformat(),
             "last_reminder_for": None,
             "last_overdue_reminder_at": None,
             "snoozed_until": None,
@@ -970,6 +977,109 @@ class SourdoughCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     record_reminder=False,
                 )
         return True
+
+    def selected_feed(self) -> dict[str, Any] | None:
+        """Return the currently selected feed-history record."""
+        selected_id = self.data.get("selected_feed_id")
+        return next(
+            (
+                item
+                for item in self.data.get("feed_history", [])
+                if item.get("id") == selected_id
+            ),
+            None,
+        )
+
+    async def select_feed(self, selected_id: str) -> None:
+        """Select one feed and initialise its staged correction timestamp."""
+        selected = next(
+            (
+                item
+                for item in self.data.get("feed_history", [])
+                if item.get("id") == selected_id
+            ),
+            None,
+        )
+        if selected is None:
+            raise HomeAssistantError("The selected feed no longer exists")
+        data = {
+            **self.data,
+            "selected_feed_id": selected_id,
+            "feed_edit_at": selected.get("fed_at"),
+        }
+        await self.store.save(data)
+        self.async_set_updated_data(data)
+
+    async def set_feed_edit_at(self, fed_at: datetime) -> None:
+        """Stage a corrected timestamp for the selected feed."""
+        if self.selected_feed() is None:
+            raise HomeAssistantError("Select a feed before editing it")
+        if fed_at.tzinfo is None:
+            fed_at = fed_at.replace(tzinfo=dt_util.get_default_time_zone())
+        data = {**self.data, "feed_edit_at": dt_util.as_utc(fed_at).isoformat()}
+        await self.store.save(data)
+        self.async_set_updated_data(data)
+
+    async def apply_selected_feed_edit(self) -> None:
+        """Apply the staged timestamp to one feed without appending history."""
+        selected_id = self.data.get("selected_feed_id")
+        fed_at = parse_datetime(self.data.get("feed_edit_at"))
+        if not selected_id or fed_at is None:
+            raise HomeAssistantError("Select a feed and corrected time first")
+        try:
+            history = update_feed_record(
+                list(self.data.get("feed_history", [])), selected_id, fed_at
+            )
+        except ValueError as err:
+            raise HomeAssistantError(str(err)) from err
+        latest = newest_feed(history)
+        data = {
+            **self.data,
+            "feed_history": history,
+            "last_fed": latest.get("fed_at") if latest else None,
+            "deadline_override": None,
+            "last_reminder_for": None,
+            "last_overdue_reminder_at": None,
+            "snoozed_until": None,
+            "last_audio_reminder_at": None,
+            "last_light_reminder_at": None,
+            "disruptive_reminder_count": 0,
+        }
+        await self.store.save(data)
+        self._was_due = False
+        self._was_due_soon = False
+        self.async_set_updated_data(data)
+
+    async def delete_selected_feed(self) -> None:
+        """Delete one selected feed and select the newest remaining record."""
+        selected_id = self.data.get("selected_feed_id")
+        if not selected_id:
+            raise HomeAssistantError("Select a feed before deleting it")
+        try:
+            history = delete_feed_record(
+                list(self.data.get("feed_history", [])), selected_id
+            )
+        except ValueError as err:
+            raise HomeAssistantError(str(err)) from err
+        latest = newest_feed(history)
+        data = {
+            **self.data,
+            "feed_history": history,
+            "selected_feed_id": latest.get("id") if latest else None,
+            "feed_edit_at": latest.get("fed_at") if latest else None,
+            "last_fed": latest.get("fed_at") if latest else None,
+            "deadline_override": None,
+            "last_reminder_for": None,
+            "last_overdue_reminder_at": None,
+            "snoozed_until": None,
+            "last_audio_reminder_at": None,
+            "last_light_reminder_at": None,
+            "disruptive_reminder_count": 0,
+        }
+        await self.store.save(data)
+        self._was_due = False
+        self._was_due_soon = False
+        self.async_set_updated_data(data)
 
     async def set_delay_option(self, option: str) -> None:
         """Select the one-off delay used by the delay button."""
